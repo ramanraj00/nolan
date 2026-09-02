@@ -30,7 +30,7 @@ export const createRecoveryCaseTable = async () => {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       merchant_id UUID NOT NULL REFERENCES merchants(user_id) ON DELETE CASCADE,
       payment_id UUID NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
-      revenue_at_risk DECIMAL(12, 2) NOT NULL,
+      revenue_at_risk BIGINT NOT NULL,
       recovery_probability DECIMAL(5, 2) DEFAULT 0.00,
       diagnosis TEXT,
       status VARCHAR(50) NOT NULL CHECK (status IN (
@@ -46,7 +46,8 @@ export const createRecoveryCaseTable = async () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       recovered_at TIMESTAMP,
-      closed_at TIMESTAMP
+      closed_at TIMESTAMP,
+      UNIQUE(payment_id)
     );
   `;
   
