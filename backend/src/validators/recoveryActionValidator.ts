@@ -39,7 +39,7 @@ export const recoveryActionSchema = z.object({
   failure_reason: z.string().optional(),
   
   // Metadata can be any arbitrary JSON object (using unknown or a loose object type)
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   
 });
 

@@ -13,10 +13,7 @@ export const policyDecisionSchema = z.object({
   action: z.string().min(1, 'Action string is required'),
   
   // The outcome from the Policy Engine
-  allowed: z.boolean({
-    required_error: 'Must specify whether the action is allowed (true/false)',
-    invalid_type_error: 'Allowed must be a boolean'
-  }),
+  allowed: z.boolean(),
   
   // Explanation of the outcome
   reason: z.string().min(1, 'Reason for the policy decision is required'),

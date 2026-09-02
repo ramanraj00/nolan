@@ -15,7 +15,7 @@ export const webhookEventSchema = z.object({
   event_type: z.string().min(1, 'Event type is required'),
   
   // The raw JSON payload received from the external provider
-  payload: z.record(z.unknown()), // Enforces that payload is an object
+  payload: z.record(z.string(), z.unknown()), // Enforces that payload is an object
   
   // Processing status
   processed: z.boolean().default(false),

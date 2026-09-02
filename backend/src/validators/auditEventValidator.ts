@@ -29,7 +29,7 @@ export const auditEventSchema = z.object({
   actor: z.string().min(1, 'Actor is required (e.g., SYSTEM, AI_AGENT)'),
   
   // Flexible metadata object for tracking context details
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   
 });
 
