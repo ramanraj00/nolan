@@ -5,6 +5,7 @@ import merchantRoutes from './routes/merchant.routes';
 import customerRoutes from './routes/customer.routes';
 import paymentRoutes from './routes/payment.routes';
 import recoveryCaseRoutes from './routes/recovery-case.routes';
+import agentDecisionRoutes from './routes/agent-decision.routes';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use('/api/merchants', merchantRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/recovery-cases', recoveryCaseRoutes);
+app.use('/api/agent-decisions', agentDecisionRoutes);
 
 app.get('/', async (req: Request, res: Response) => {
   try {

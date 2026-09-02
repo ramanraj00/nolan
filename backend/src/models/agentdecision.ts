@@ -10,10 +10,10 @@ export interface AgentDecision {
   id: string;                      // Unique internal ID for the decision (UUID)
   recovery_case_id: string;        // ID of the related recovery case (Foreign Key)
   diagnosis: string;               // AI's analysis of why the payment failed
-  reasoning: string;               // Step-by-step reasoning or thought process of the AI
+  reasoning: string;               // Concise decision rationale / explanation (e.g., "Customer has paid 4/5 invoices, delayed retry recommended")
   recovery_probability: number;    // Estimated probability of success (0-100)
-  recommended_action: string;      // The exact action the AI suggests (e.g., 'SEND_EMAIL_REMINDER')
-  recommended_delay: number;       // Suggested delay before taking action (e.g., in minutes or hours)
+  recommended_action: 'RETRY_PAYMENT' | 'REQUEST_PAYMENT_METHOD_UPDATE' | 'SEND_CHECKOUT_RECOVERY' | 'RETRY_SUBSCRIPTION' | 'SEND_PAYMENT_REMINDER' | 'ESCALATE_HUMAN' | 'STOP_RECOVERY';
+  recommended_delay: number;       // Suggested delay before taking action in minutes (e.g., 1440 for 24 hours)
   confidence: number;              // AI's confidence score in its decision (0-100)
   model: string;                   // The AI model used for this decision (e.g., 'gpt-4', 'claude-3')
   created_at: Date;                // Timestamp of when the decision was made
@@ -31,7 +31,15 @@ export const createAgentDecisionTable = async () => {
       diagnosis TEXT NOT NULL,
       reasoning TEXT NOT NULL,
       recovery_probability DECIMAL(5, 2) NOT NULL,
-      recommended_action VARCHAR(100) NOT NULL,
+      recommended_action VARCHAR(100) NOT NULL CHECK (recommended_action IN (
+        'RETRY_PAYMENT', 
+        'REQUEST_PAYMENT_METHOD_UPDATE', 
+        'SEND_CHECKOUT_RECOVERY', 
+        'RETRY_SUBSCRIPTION', 
+        'SEND_PAYMENT_REMINDER', 
+        'ESCALATE_HUMAN', 
+        'STOP_RECOVERY'
+      )),
       recommended_delay INT DEFAULT 0,
       confidence DECIMAL(5, 2) NOT NULL,
       model VARCHAR(100) NOT NULL,

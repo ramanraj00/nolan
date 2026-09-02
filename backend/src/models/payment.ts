@@ -35,7 +35,7 @@ export const createPaymentTable = async () => {
       currency VARCHAR(10) DEFAULT 'INR',
       status VARCHAR(50) NOT NULL CHECK (status IN ('CREATED', 'AUTHORIZED', 'CAPTURED', 'FAILED', 'REFUNDED')),
       failure_reason TEXT,
-      attempt_count INT DEFAULT 1,
+      attempt_count INT NOT NULL DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       failed_at TIMESTAMP,
       recovered_at TIMESTAMP,
