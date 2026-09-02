@@ -12,7 +12,7 @@ const router = express.Router();
 // {
 //   "name": "Acme Store",
 //   "email": "owner@acme.com",
-//   "razorpay_account_id": "acc_12345",
+//   "razorpayAccountId": "acc_12345",
 //   "status": "active"
 // }
 router.post('/', async (req: Request, res: Response): Promise<void> => {
@@ -29,17 +29,24 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // 2. Destructure the validated dynamic data
-    const { name, email, razorpay_account_id, status } = validationResult.data;
+    // 2. Destructure the validated dynamic data (Frontend strictly uses camelCase)
+    const { name, email, razorpayAccountId, status } = validationResult.data;
 
     // 3. Write a parameterized SQL query to prevent SQL Injection
-    // user_id, created_at, and updated_at are generated automatically by PostgreSQL
+    // Mapping camelCase frontend variables to snake_case DB columns
     const query = `
       INSERT INTO merchants (name, email, razorpay_account_id, status)
       VALUES ($1, $2, $3, $4)
-      RETURNING *;
+      RETURNING 
+        user_id as id, 
+        name, 
+        email, 
+        razorpay_account_id as "razorpayAccountId", 
+        status, 
+        created_at, 
+        updated_at;
     `;
-    const values = [name, email, razorpay_account_id, status];
+    const values = [name, email, razorpayAccountId, status];
 
     // 4. Execute the query
     const dbResult = await pool.query(query, values);
@@ -167,17 +174,29 @@ router.patch('/:id', async (req: Request, res: Response): Promise<void> => {
 
     const updates = validationResult.data;
 
-    // 2. Check if there are actually any fields to update
-    const updateKeys = Object.keys(updates);
+    // 2. Explicit mapping of allowed columns (Security Best Practice)
+    // This ensures only predefined fields can be updated in the database
+    const columnMap: Record<string, string> = {
+      name: 'name',
+      email: 'email',
+      razorpayAccountId: 'razorpay_account_id',
+      status: 'status',
+    };
+
+    // Filter out any keys that are not in our columnMap
+    const updateKeys = Object.keys(updates).filter((key) => columnMap[key]);
+
     if (updateKeys.length === 0) {
-      res.status(400).json({ error: 'No fields provided to update' });
+      res.status(400).json({ error: 'No valid fields provided to update' });
       return;
     }
 
-    // 3. Dynamically build the SQL UPDATE query
+    // 3. Dynamically build the SQL UPDATE query using the mapped column names
     // Example: SET email = $1, status = $2
-    const setClauses = updateKeys.map((key, index) => `${key} = $${index + 1}`);
-    const values = Object.values(updates);
+    const setClauses = updateKeys.map((key, index) => `${columnMap[key]} = $${index + 1}`);
+    
+    // Extract values exactly in the order of the keys we just mapped
+    const values = updateKeys.map((key) => (updates as any)[key]);
     
     // Add the merchantId as the last parameter for the WHERE clause
     values.push(merchantId);
@@ -266,7 +285,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
 
     // 3. Return the deactivated merchant
     res.status(200).json({
-      message: 'Merchant successfully deactivated (soft deleted)',
+      message: 'Merchant deactivated',
       data: dbResult.rows[0],
     });
   } catch (error: any) {
@@ -278,7 +297,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
        return;
     }
 
-    res.status(500).json({ error: 'Internal server error while deleting the merchant' });
+    res.status(500).json({ error: 'Internal server error while deactivating the merchant' });
   }
 });
 

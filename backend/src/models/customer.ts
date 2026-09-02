@@ -16,6 +16,7 @@ export interface Customer {
   total_payments: number;          // Total number of payment attempts
   successful_payments: number;     // Number of successful payment transactions
   failed_payments: number;         // Number of failed payment transactions
+  status: 'active' | 'inactive';   // Customer's current status (for soft deletes)
   created_at: Date;                // Timestamp of record creation
   updated_at: Date;                // Timestamp of last update
 }
@@ -37,8 +38,10 @@ export const createCustomerTable = async () => {
       total_payments INT DEFAULT 0,
       successful_payments INT DEFAULT 0,
       failed_payments INT DEFAULT 0,
+      status VARCHAR(50) DEFAULT 'active',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(merchant_id, external_customer_id)
     );
   `;
   

@@ -16,7 +16,7 @@ export const merchantSchema = z.object({
   email: z.string().email('Invalid email address'),
   
   // Razorpay account ID cannot be empty
-  razorpay_account_id: z.string().min(1, 'Razorpay account ID is required'),
+  razorpayAccountId: z.string().min(1, 'Razorpay account ID is required'),
   
   // Status must be one of the specified options. Defaults to 'active' if not provided.
   status: z.enum(['active', 'inactive', 'suspended']).default('active'),

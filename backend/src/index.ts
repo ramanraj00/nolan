@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import { pool } from './db';
+import merchantRoutes from './routes/merchant.routes';
+import customerRoutes from './routes/customer.routes';
 
 dotenv.config();
 
@@ -8,6 +10,10 @@ const app = express();
 const port = process.env.PORT || 8000;
 
 app.use(express.json());
+
+// Register API Routes
+app.use('/api/merchants', merchantRoutes);
+app.use('/api/customers', customerRoutes);
 
 app.get('/', async (req: Request, res: Response) => {
   try {
