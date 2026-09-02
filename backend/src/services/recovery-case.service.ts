@@ -1,0 +1,146 @@
+import { pool } from '../db';
+
+export class RecoveryCaseService {
+  static async createRecoveryCase(data: { merchantId: string; paymentId: string }) {
+    const paymentCheckQuery = `
+      SELECT id, merchant_id, status, amount 
+      FROM payments 
+      WHERE id = $1 AND merchant_id = $2
+    `;
+    const paymentCheck = await pool.query(paymentCheckQuery, [data.paymentId, data.merchantId]);
+
+    if (paymentCheck.rows.length === 0) {
+      throw new Error('PAYMENT_NOT_FOUND');
+    }
+
+    const payment = paymentCheck.rows[0];
+
+    if (payment.status !== 'FAILED') {
+      throw new Error('PAYMENT_NOT_FAILED');
+    }
+
+    const initialStatus = 'OPEN';
+    const initialProbability = 0.00;
+
+    const insertQuery = `
+      INSERT INTO recovery_cases (
+        merchant_id, 
+        payment_id, 
+        revenue_at_risk, 
+        recovery_probability, 
+        diagnosis, 
+        status, 
+        recovered_at, 
+        closed_at
+      )
+      VALUES ($1, $2, $3, $4, NULL, $5, NULL, NULL)
+      RETURNING 
+        id, 
+        merchant_id as "merchantId", 
+        payment_id as "paymentId", 
+        revenue_at_risk as "revenueAtRisk", 
+        recovery_probability as "recoveryProbability", 
+        diagnosis, 
+        status, 
+        created_at as "createdAt", 
+        updated_at as "updatedAt", 
+        recovered_at as "recoveredAt", 
+        closed_at as "closedAt";
+    `;
+    const values = [
+      data.merchantId, 
+      data.paymentId, 
+      payment.amount, 
+      initialProbability, 
+      initialStatus
+    ];
+
+    const dbResult = await pool.query(insertQuery, values);
+    return dbResult.rows[0];
+  }
+
+  static async getRecoveryCasesByMerchant(merchant_id: string, status?: string) {
+    let query = `
+      SELECT 
+        rc.id, 
+        rc.merchant_id as "merchantId", 
+        rc.payment_id as "paymentId", 
+        rc.revenue_at_risk as "revenueAtRisk", 
+        rc.recovery_probability as "recoveryProbability", 
+        rc.diagnosis, 
+        rc.status, 
+        rc.created_at as "createdAt", 
+        rc.updated_at as "updatedAt", 
+        rc.recovered_at as "recoveredAt", 
+        rc.closed_at as "closedAt",
+        json_build_object(
+          'amount', p.amount,
+          'currency', p.currency,
+          'failureReason', p.failure_reason
+        ) as payment
+      FROM recovery_cases rc
+      JOIN payments p ON p.id = rc.payment_id
+      WHERE rc.merchant_id = $1
+    `;
+    
+    const values: any[] = [merchant_id];
+
+    if (status) {
+      const allowedStatuses = [
+        'OPEN', 'ANALYZING', 'ACTION_PENDING', 'IN_PROGRESS', 
+        'RECOVERED', 'ESCALATED', 'STOPPED', 'UNRECOVERABLE'
+      ];
+      const upperStatus = status.toUpperCase();
+      
+      if (!allowedStatuses.includes(upperStatus)) {
+        throw new Error('INVALID_STATUS');
+      }
+      
+      values.push(upperStatus);
+      query += ` AND rc.status = $2`;
+    }
+
+    query += ` ORDER BY rc.created_at DESC;`;
+
+    const dbResult = await pool.query(query, values);
+    return dbResult.rows;
+  }
+
+  static async getRecoveryCaseById(caseId: string) {
+    const query = `
+      SELECT 
+        rc.id, 
+        rc.merchant_id as "merchantId", 
+        rc.payment_id as "paymentId", 
+        rc.revenue_at_risk as "revenueAtRisk", 
+        rc.recovery_probability as "recoveryProbability", 
+        rc.diagnosis, 
+        rc.status, 
+        rc.created_at as "createdAt", 
+        rc.updated_at as "updatedAt", 
+        rc.recovered_at as "recoveredAt", 
+        rc.closed_at as "closedAt",
+        json_build_object(
+          'amount', p.amount,
+          'currency', p.currency,
+          'failureReason', p.failure_reason
+        ) as payment
+      FROM recovery_cases rc
+      JOIN payments p ON p.id = rc.payment_id
+      WHERE rc.id = $1;
+    `;
+    
+    const dbResult = await pool.query(query, [caseId]);
+    return dbResult.rows.length > 0 ? dbResult.rows[0] : null;
+  }
+  static async updateCaseStatus(caseId: string, merchantId: string, status: string) {
+    const query = `
+      UPDATE recovery_cases
+      SET status = $1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2 AND merchant_id = $3
+      RETURNING *;
+    `;
+    const dbResult = await pool.query(query, [status, caseId, merchantId]);
+    return dbResult.rows[0];
+  }
+}

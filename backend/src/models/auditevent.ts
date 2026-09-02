@@ -17,10 +17,12 @@ import { pool } from '../db';
 export interface AuditEvent {
   id: string;                      // Unique internal ID for the event (UUID)
   merchant_id: string;             // ID of the merchant (Foreign Key)
-  recovery_case_id?: string;       // ID of the recovery case (Optional, as some events might happen before a case is created)
+  recovery_case_id?: string;       // ID of the recovery case (Optional)
+  entity_type?: 'PAYMENT' | 'RECOVERY_CASE' | 'AGENT_DECISION' | 'POLICY_DECISION' | 'RECOVERY_ACTION'; // The type of entity
+  entity_id?: string;              // The specific UUID of the entity
   event_type: 'PAYMENT_FAILED' | 'REVENUE_RISK_DETECTED' | 'AI_ANALYSIS_COMPLETED' | 'POLICY_EVALUATED' | 'ACTION_APPROVED' | 'ACTION_REJECTED' | 'ACTION_EXECUTED' | 'PAYMENT_RECOVERED' | 'RECOVERY_ESCALATED' | 'RECOVERY_STOPPED';
-  actor: string;                   // Who performed the action (e.g., 'SYSTEM', 'AI_AGENT', 'POLICY_ENGINE', 'HUMAN')
-  metadata?: any;                  // JSON object storing extra details (like old status, new status, timestamps, etc.)
+  actor: 'SYSTEM' | 'AI_AGENT' | 'POLICY_ENGINE' | 'HUMAN'; // Who performed the action
+  metadata?: Record<string, unknown>; // JSON object storing extra details (like old status, new status, timestamps, etc.)
   created_at: Date;                // Timestamp of when the event occurred
 }
 
@@ -34,6 +36,14 @@ export const createAuditEventTable = async () => {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       merchant_id UUID NOT NULL REFERENCES merchants(user_id) ON DELETE CASCADE,
       recovery_case_id UUID REFERENCES recovery_cases(id) ON DELETE CASCADE,
+      entity_type VARCHAR(100) CHECK (entity_type IN (
+        'PAYMENT',
+        'RECOVERY_CASE',
+        'AGENT_DECISION',
+        'POLICY_DECISION',
+        'RECOVERY_ACTION'
+      )),
+      entity_id UUID,
       event_type VARCHAR(100) NOT NULL CHECK (event_type IN (
         'PAYMENT_FAILED', 
         'REVENUE_RISK_DETECTED', 
@@ -46,7 +56,12 @@ export const createAuditEventTable = async () => {
         'RECOVERY_ESCALATED', 
         'RECOVERY_STOPPED'
       )),
-      actor VARCHAR(100) NOT NULL,
+      actor VARCHAR(50) NOT NULL CHECK (actor IN (
+        'SYSTEM', 
+        'AI_AGENT', 
+        'POLICY_ENGINE', 
+        'HUMAN'
+      )),
       metadata JSONB,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );

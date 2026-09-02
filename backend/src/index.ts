@@ -8,6 +8,8 @@ import recoveryCaseRoutes from './routes/recovery-case.routes';
 import agentDecisionRoutes from './routes/agent-decision.routes';
 import policyDecisionRoutes from './routes/policy-decision.routes';
 import recoveryActionRoutes from './routes/recovery-action.routes';
+import auditEventRoutes from './routes/audit-event.routes';
+import webhookEventRoutes from './routes/webhook-event.routes';
 
 dotenv.config();
 
@@ -24,6 +26,8 @@ app.use('/api/recovery-cases', recoveryCaseRoutes);
 app.use('/api/agent-decisions', agentDecisionRoutes);
 app.use('/api/policy-decisions', policyDecisionRoutes);
 app.use('/api/recovery-actions', recoveryActionRoutes);
+app.use('/api/audit-events', auditEventRoutes);
+app.use('/api/webhook-events', webhookEventRoutes);
 
 app.get('/', async (req: Request, res: Response) => {
   try {
