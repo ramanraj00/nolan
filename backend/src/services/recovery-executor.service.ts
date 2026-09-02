@@ -66,7 +66,7 @@ export class RecoveryExecutorService {
       });
 
       // 7. Close the Recovery Case
-      await RecoveryCaseService.updateCaseStatus(recoveryCaseId, merchantId, 'CLOSED_RECOVERED');
+      await RecoveryCaseService.updateCaseStatus(recoveryCaseId, merchantId, 'RECOVERED');
 
       return { success: true, message: executionResult.message };
 
@@ -119,24 +119,62 @@ export class RecoveryExecutorService {
     return updatedAction;
   }
 
-  /**
-   * Simulates dynamic logic for contacting an external provider based on action type.
-   */
   private static async performProviderAction(actionType: string, actionData: any): Promise<{ message: string }> {
-    // In a real system, this would import Razorpay SDK, Email SDK, etc.
-    // For MVP, we route dynamically but simulate network calls.
-    
+    if (actionType === 'RETRY_PAYMENT') {
+      // Connect to ACTUAL Razorpay API
+      // To retry a payment programmatically, usually you'd charge a tokenized card (recurring).
+      // Here we simulate hitting Razorpay's API. If keys are missing or paymentId is mock, it will correctly fail and trigger the FAILED -> ESCALATE flow.
+      const keyId = process.env.RAZORPAY_KEY_ID || 'dummy_key';
+      const keySecret = process.env.RAZORPAY_KEY_SECRET || 'dummy_secret';
+      
+      // We need the payment ID. Since actionData only has recoveryCaseId, 
+      // we'd typically fetch the payment ID via the recoveryCase, but for this executor we can 
+      // assume it's passed in metadata or we fetch it.
+      const fetchQuery = `
+        SELECT p.razorpay_payment_id 
+        FROM recovery_cases rc
+        JOIN payments p ON p.id = rc.payment_id
+        WHERE rc.id = $1
+      `;
+      const dbRes = await pool.query(fetchQuery, [actionData.recoveryCaseId]);
+      const razorpayPaymentId = dbRes.rows[0]?.razorpay_payment_id || 'unknown_pay_id';
+
+      // Example standard Razorpay API call (Base64 Auth)
+      const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+      
+      const response = await fetch(`https://api.razorpay.com/v1/payments/${razorpayPaymentId}/capture`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: 1000, 
+          currency: "INR"
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`Razorpay API Error: ${data.error?.description || response.statusText}`);
+      }
+
+      return { message: `Razorpay successfully retried/captured payment: ${data.id}` };
+    }
+
+    // Other mocked actions
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         switch (actionType) {
-          case 'RETRY_PAYMENT':
-            // E.g., Razorpay /payments/{id}/retry
-            resolve({ message: 'Payment retry succeeded via provider gateway.' });
-            break;
-            
           case 'REQUEST_PAYMENT_METHOD_UPDATE':
             // E.g., SendGrid email template
             resolve({ message: 'Update link emailed to customer.' });
+            break;
+
+          case 'SEND_PAYMENT_REMINDER':
+            // E.g., SendGrid / Twilio Reminder
+            resolve({ message: 'Payment reminder email sent successfully.' });
             break;
 
           case 'SEND_CHECKOUT_RECOVERY':

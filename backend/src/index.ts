@@ -10,13 +10,18 @@ import policyDecisionRoutes from './routes/policy-decision.routes';
 import recoveryActionRoutes from './routes/recovery-action.routes';
 import auditEventRoutes from './routes/audit-event.routes';
 import webhookEventRoutes from './routes/webhook-event.routes';
+import metricsRoutes from './routes/metrics.routes';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 8000;
 
-app.use(express.json());
+app.use(express.json({
+  verify: (req: any, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
 
 // Register API Routes
 app.use('/api/merchants', merchantRoutes);
@@ -28,6 +33,7 @@ app.use('/api/policy-decisions', policyDecisionRoutes);
 app.use('/api/recovery-actions', recoveryActionRoutes);
 app.use('/api/audit-events', auditEventRoutes);
 app.use('/api/webhook-events', webhookEventRoutes);
+app.use('/api/metrics', metricsRoutes);
 
 app.get('/', async (req: Request, res: Response) => {
   try {

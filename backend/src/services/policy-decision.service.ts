@@ -43,7 +43,7 @@ export class PolicyDecisionService {
       reason = 'Cannot execute actions on a case in a terminal state';
       rule = 'terminal_state_deny';
     }
-    else if (context.confidence < 50) {
+    else if (context.confidence < 0.50) {
       allowed = false;
       reason = 'AI confidence is below the safe threshold of 50%';
       rule = 'low_confidence_deny';

@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import { z } from 'zod';
+import crypto from 'crypto';
 import { WebhookEventService } from '../services/webhook-event.service';
 
 const router = express.Router();
@@ -8,6 +9,73 @@ const createWebhookEventSchema = z.object({
   eventId: z.string().min(1, 'Event ID is required'),
   eventType: z.string().min(1, 'Event type is required'),
   payload: z.record(z.string(), z.unknown())
+});
+
+// ==========================================
+// RECORD RAZORPAY WEBHOOK (POST Request)
+// ==========================================
+router.post('/razorpay', async (req: any, res: Response): Promise<void> => {
+  try {
+    const signature = req.headers['x-razorpay-signature'];
+    const eventId = req.headers['x-razorpay-event-id'] || req.body?.id; // sometimes it's in the header, sometimes body.id
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || 'secret'; // Normally must be in .env
+
+    if (!signature) {
+      res.status(400).json({ error: 'Missing Razorpay signature' });
+      return;
+    }
+
+    if (!eventId) {
+      res.status(400).json({ error: 'Missing Razorpay Event ID' });
+      return;
+    }
+
+    // Verify Signature using rawBody captured globally in index.ts
+    const rawBody = req.rawBody || JSON.stringify(req.body); 
+    const expectedSignature = crypto.createHmac('sha256', webhookSecret)
+                                    .update(rawBody)
+                                    .digest('hex');
+
+    if (expectedSignature !== signature) {
+      console.error('Invalid Razorpay signature', { expectedSignature, signature });
+      res.status(400).json({ error: 'Invalid signature' });
+      return;
+    }
+
+    // Passed Verification -> Extract Payload
+    const eventType = req.body?.event;
+    
+    if (!eventType) {
+      res.status(400).json({ error: 'Missing event type in payload' });
+      return;
+    }
+
+    // Save to database
+    const event = await WebhookEventService.createWebhookEvent({
+      eventId: String(eventId),
+      eventType: String(eventType),
+      payload: req.body
+    });
+
+    // 200 OK Response is critical for Razorpay to know it was received
+    res.status(200).json({
+      message: 'Razorpay webhook received and verified successfully',
+      data: event
+    });
+
+  } catch (error: any) {
+    if (error.code === '23505') {
+       // Idempotency: Duplicate Event ID. Return 200 so Razorpay stops retrying.
+       res.status(200).json({ 
+         message: 'Webhook event already received and stored (Idempotent)',
+         eventId: req.headers['x-razorpay-event-id'] || req.body?.id
+       });
+       return;
+    }
+
+    console.error('Error processing Razorpay webhook:', error);
+    res.status(500).json({ error: 'Internal server error while processing webhook' });
+  }
 });
 
 router.post('/', async (req: Request, res: Response): Promise<void> => {

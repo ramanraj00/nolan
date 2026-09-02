@@ -34,7 +34,7 @@ export class AiAgentService {
    */
   static async analyzeFailure(payment: any, customer: any, recoveryCaseId: string): Promise<AiDecision> {
     
-    // For testing without an API key, we return a dynamic mock
+    // For automated tests without an API key, fallback to mock so pipelines don't break
     if (!ai) {
       console.warn("GEMINI_API_KEY is missing. Using mock AI response.");
       return {
