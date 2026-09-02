@@ -6,6 +6,8 @@ import customerRoutes from './routes/customer.routes';
 import paymentRoutes from './routes/payment.routes';
 import recoveryCaseRoutes from './routes/recovery-case.routes';
 import agentDecisionRoutes from './routes/agent-decision.routes';
+import policyDecisionRoutes from './routes/policy-decision.routes';
+import recoveryActionRoutes from './routes/recovery-action.routes';
 
 dotenv.config();
 
@@ -20,6 +22,8 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/recovery-cases', recoveryCaseRoutes);
 app.use('/api/agent-decisions', agentDecisionRoutes);
+app.use('/api/policy-decisions', policyDecisionRoutes);
+app.use('/api/recovery-actions', recoveryActionRoutes);
 
 app.get('/', async (req: Request, res: Response) => {
   try {

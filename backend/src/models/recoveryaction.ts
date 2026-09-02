@@ -9,14 +9,16 @@ import { pool } from '../db';
 export interface RecoveryAction {
   id: string;                      // Unique internal ID for the action (UUID)
   recovery_case_id: string;        // ID of the related recovery case (Foreign Key)
+  policy_decision_id: string;      // ID of the policy decision that triggered this action (Foreign Key)
   type: 'RETRY_PAYMENT' | 'REQUEST_PAYMENT_METHOD_UPDATE' | 'SEND_CHECKOUT_RECOVERY' | 'RETRY_SUBSCRIPTION' | 'SEND_PAYMENT_REMINDER' | 'ESCALATE_HUMAN' | 'STOP_RECOVERY';
-  status: 'PENDING' | 'SCHEDULED' | 'EXECUTING' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
+  status: 'PENDING_APPROVAL' | 'PENDING' | 'SCHEDULED' | 'EXECUTING' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
   scheduled_at?: Date;             // Timestamp of when the action is scheduled to run
   executed_at?: Date;              // Timestamp of when the action actually started
   completed_at?: Date;             // Timestamp of when the action finished
   result?: string;                 // Detailed outcome of the action (e.g., successful API response)
   failure_reason?: string;         // Reason if the action failed to execute
   metadata?: any;                  // JSON field for storing any arbitrary/dynamic data related to the action
+  created_at: Date;                // Timestamp of when the action was created in the queue
 }
 
 // ==========================================
@@ -28,6 +30,7 @@ export const createRecoveryActionTable = async () => {
     CREATE TABLE IF NOT EXISTS recovery_actions (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       recovery_case_id UUID NOT NULL REFERENCES recovery_cases(id) ON DELETE CASCADE,
+      policy_decision_id UUID NOT NULL REFERENCES policy_decisions(id) ON DELETE CASCADE,
       type VARCHAR(100) NOT NULL CHECK (type IN (
         'RETRY_PAYMENT', 
         'REQUEST_PAYMENT_METHOD_UPDATE', 
@@ -38,6 +41,7 @@ export const createRecoveryActionTable = async () => {
         'STOP_RECOVERY'
       )),
       status VARCHAR(50) NOT NULL CHECK (status IN (
+        'PENDING_APPROVAL',
         'PENDING', 
         'SCHEDULED', 
         'EXECUTING', 
@@ -50,7 +54,9 @@ export const createRecoveryActionTable = async () => {
       completed_at TIMESTAMP,
       result TEXT,
       failure_reason TEXT,
-      metadata JSONB
+      metadata JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(policy_decision_id)
     );
   `;
   
