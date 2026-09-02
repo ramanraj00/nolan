@@ -31,14 +31,15 @@ export const createPaymentTable = async () => {
       merchant_id UUID NOT NULL REFERENCES merchants(user_id) ON DELETE CASCADE,
       customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
       razorpay_payment_id VARCHAR(255) NOT NULL,
-      amount DECIMAL(12, 2) NOT NULL,
+      amount BIGINT NOT NULL,
       currency VARCHAR(10) DEFAULT 'INR',
       status VARCHAR(50) NOT NULL CHECK (status IN ('CREATED', 'AUTHORIZED', 'CAPTURED', 'FAILED', 'REFUNDED')),
       failure_reason TEXT,
       attempt_count INT DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       failed_at TIMESTAMP,
-      recovered_at TIMESTAMP
+      recovered_at TIMESTAMP,
+      UNIQUE(razorpay_payment_id)
     );
   `;
   

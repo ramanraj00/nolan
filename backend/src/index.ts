@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { pool } from './db';
 import merchantRoutes from './routes/merchant.routes';
 import customerRoutes from './routes/customer.routes';
+import paymentRoutes from './routes/payment.routes';
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 // Register API Routes
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.get('/', async (req: Request, res: Response) => {
   try {
