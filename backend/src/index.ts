@@ -17,6 +17,8 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 8000;
 
+import cors from "cors";
+app.use(cors());
 app.use(express.json({
   verify: (req: any, res, buf) => {
     req.rawBody = buf.toString();

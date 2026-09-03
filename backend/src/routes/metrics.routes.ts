@@ -3,22 +3,18 @@ import { MetricsService } from '../services/metrics.service';
 
 const router = express.Router();
 
-// ==========================================
-// GET MERCHANT RECOVERY METRICS
-// ==========================================
-// Endpoint: GET /api/metrics/:merchantId
 router.get('/:merchantId', async (req: Request, res: Response): Promise<void> => {
   try {
     const merchantId = String(req.params.merchantId);
+    const timeframe = req.query.timeframe as string || '7d';
 
-    // Simple UUID validation (optional but good practice)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(merchantId)) {
       res.status(400).json({ error: 'Invalid Merchant ID format' });
       return;
     }
 
-    const metrics = await MetricsService.getMerchantRecoveryMetrics(merchantId);
+    const metrics = await MetricsService.getMerchantRecoveryMetrics(merchantId, timeframe);
 
     res.status(200).json(metrics);
   } catch (error: any) {
@@ -32,4 +28,3 @@ router.get('/:merchantId', async (req: Request, res: Response): Promise<void> =>
 });
 
 export default router;
-
