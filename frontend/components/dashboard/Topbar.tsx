@@ -1,4 +1,19 @@
+"use client";
+import { useRouter, useSearchParams } from "next/navigation";
+
 export default function Topbar() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search") || "";
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const params = new URLSearchParams(searchParams);
+    if (val) params.set("search", val);
+    else params.delete("search");
+    router.replace(`?${params.toString()}`);
+  };
+
   return (
     <header className="h-16 w-full bg-[#0a0a0a] border-b border-white/5 flex items-center justify-between px-6 shrink-0">
       
@@ -13,11 +28,18 @@ export default function Topbar() {
       <div className="flex items-center gap-6">
         
         {/* Search */}
-        <button className="text-[#888] hover:text-white transition-colors">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <div className="relative group">
+          <svg className="w-4 h-4 text-[#888] absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-[#C8FF00] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-        </button>
+          <input 
+            type="text" 
+            placeholder="Search cases..." 
+            value={searchQuery}
+            onChange={handleSearch}
+            className="bg-[#111] border border-white/10 text-white text-xs px-9 py-2 focus:outline-none focus:border-[#C8FF00]/50 focus:ring-1 focus:ring-[#C8FF00]/50 transition-all w-48 focus:w-64"
+          />
+        </div>
 
         {/* Notifications */}
         <button className="text-[#888] hover:text-white transition-colors relative">

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Sidebar from "../../components/dashboard/Sidebar";
 import Topbar from "../../components/dashboard/Topbar";
 
@@ -15,7 +16,7 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Topbar */}
         <div className="relative z-10">
-          <Topbar />
+          <Suspense fallback={<div className="h-16 bg-[#0a0a0a] border-b border-white/5"></div>}><Topbar /></Suspense>
         </div>
         
         {/* Page Content */}

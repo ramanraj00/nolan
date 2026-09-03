@@ -73,20 +73,24 @@ export class PaymentService {
   static async getPaymentsByMerchant(merchant_id: string, status?: string) {
     let query = `
       SELECT 
-        id, 
-        merchant_id as "merchantId", 
-        customer_id as "customerId", 
-        razorpay_payment_id as "razorpayPaymentId", 
-        amount, 
-        currency, 
-        status, 
-        failure_reason as "failureReason", 
-        attempt_count as "attemptCount",
-        created_at as "createdAt", 
-        failed_at as "failedAt", 
-        recovered_at as "recoveredAt"
-      FROM payments
-      WHERE merchant_id = $1
+        p.id, 
+        p.merchant_id as "merchantId", 
+        p.customer_id as "customerId", 
+        p.razorpay_payment_id as "razorpayPaymentId", 
+        p.amount, 
+        p.currency, 
+        p.status, 
+        p.failure_reason as "failureReason", 
+        p.attempt_count as "attemptCount",
+        p.created_at as "createdAt", 
+        p.failed_at as "failedAt", 
+        p.recovered_at as "recoveredAt",
+        c.name as "customerName",
+        rc.id as "recoveryCaseId"
+      FROM payments p
+      LEFT JOIN customers c ON p.customer_id = c.id
+      LEFT JOIN recovery_cases rc ON p.id = rc.payment_id
+      WHERE p.merchant_id = $1
     `;
     
     const values: any[] = [merchant_id];
@@ -100,10 +104,10 @@ export class PaymentService {
       }
       
       values.push(upperStatus);
-      query += ` AND status = $2`;
+      query += ` AND p.status = $2`;
     }
 
-    query += ` ORDER BY created_at DESC;`;
+    query += ` ORDER BY p.created_at DESC`;
 
     const dbResult = await pool.query(query, values);
     return dbResult.rows;

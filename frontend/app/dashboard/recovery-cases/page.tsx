@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { useRecoveryCases } from "../../../lib/useRecoveryCases";
 import { RecoveryCase } from "../../../lib/api";
@@ -47,7 +47,17 @@ const getRecommendedAction = (diagnosis: string | null) => {
   }
 };
 
+import { Suspense } from "react";
+
 export default function RecoveryCasesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
+      <RecoveryCasesContent />
+    </Suspense>
+  );
+}
+
+function RecoveryCasesContent() {
   const router = useRouter();
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState('All Cases');
@@ -87,8 +97,23 @@ export default function RecoveryCasesPage() {
 
   const cols: ColumnKey[] = ['ID', 'Payment', 'Customer', 'Amount', 'Probability', 'Diagnosis', 'Action', 'Date', 'Status', 'Actions'];
 
-  const totalPages = Math.ceil(cases.length / itemsPerPage);
-  const displayCases = cases.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("search")?.toLowerCase() || "";
+  
+  const filteredCases = cases.filter(c => {
+    if (!searchQuery) return true;
+    const searchableString = `
+      RC-${(parseInt(c.id.replace(/-/g, '').substring(0, 8), 16) % 9000 + 1000)}
+      ${c.payment?.id || c.paymentId}
+      ${c.customerName || ''}
+      ${c.diagnosis || ''}
+      ${c.status}
+    `.toLowerCase();
+    return searchableString.includes(searchQuery);
+  });
+
+  const totalPages = Math.ceil(filteredCases.length / itemsPerPage);
+  const displayCases = filteredCases.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleSelectAll = () => {
     if (selectedRows.size === displayCases.length && displayCases.length > 0) {
@@ -96,6 +121,39 @@ export default function RecoveryCasesPage() {
     } else {
       setSelectedRows(new Set(displayCases.map((c: RecoveryCase) => c.id)));
     }
+  };
+
+  const handleExport = () => {
+    if (filteredCases.length === 0) return;
+
+    const headers = [
+      "Case ID", "Payment ID", "Customer Name", "Amount", 
+      "Probability", "Diagnosis", "Action", "Status", "Created At"
+    ];
+    
+    const rows = filteredCases.map(c => [
+      `RC-${(parseInt(c.id.replace(/-/g, '').substring(0, 8), 16) % 9000 + 1000)}`,
+      c.payment?.id || `pay_${c.paymentId.split('-')[0]}`,
+      c.customerName || 'Unknown',
+      c.revenueAtRisk,
+      `${Number(c.recoveryProbability || 0).toFixed(0)}%`,
+      c.diagnosis || 'Analyzing',
+      getRecommendedAction(c.diagnosis),
+      c.status,
+      new Date(c.createdAt).toISOString()
+    ]);
+
+    const escapeCSV = (str: any) => `"${String(str).replace(/"/g, '""')}"`;
+    const csvContent = [headers.join(","), ...rows.map(r => r.map(escapeCSV).join(","))].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `recovery_cases_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const toggleRow = (id: string) => {
@@ -253,7 +311,7 @@ export default function RecoveryCasesPage() {
                         >
                           Open
                         </button>
-                        <button className="text-[11px] font-bold text-[#32ADE6] hover:text-[#7fd3ff] uppercase tracking-widest transition-colors">
+                        <button onClick={() => router.push(`/dashboard/recovery-cases/${rc.id}`)} className="text-[11px] font-bold text-[#32ADE6] hover:text-[#7fd3ff] uppercase tracking-widest transition-colors">
                           Analysis
                         </button>
                       </div>
@@ -268,7 +326,7 @@ export default function RecoveryCasesPage() {
         {/* Flat Bottom bar */}
         <div className="h-16 border-t border-white/5 flex items-center justify-between px-8 bg-[#0f1015] shrink-0">
           <div className="text-[11px] uppercase tracking-widest text-[#555] font-bold">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, cases.length)} of {cases.length} entries
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredCases.length)} of {filteredCases.length} entries
           </div>
           <div className="flex items-center gap-2">
             <button 

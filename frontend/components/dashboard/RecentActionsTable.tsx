@@ -22,11 +22,33 @@ const TYPE_SHORT: Record<string, string> = {
 export default function RecentActionsTable({ data }: { data: RecoveryAction[] }) {
   const recent = data.slice(0, 5);
 
+  const handleExport = () => {
+    if (data.length === 0) return;
+    const headers = ["Action ID", "Type", "Status", "Created At", "Result"];
+    const rows = data.map(act => [
+      act.id,
+      act.type,
+      act.status,
+      act.createdAt ? new Date(act.createdAt).toISOString() : "",
+      act.result || ""
+    ]);
+    const escapeCSV = (str: any) => `"${String(str).replace(/"/g, '""')}"`;
+    const csvContent = [headers.join(","), ...rows.map(r => r.map(escapeCSV).join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `recent_actions_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="bg-[#111217] rounded-2xl border border-white/5 h-full p-5 flex flex-col relative overflow-hidden">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-[#888] font-bold text-[10px] tracking-widest uppercase">Action Log</h3>
-        <span className="text-[9px] text-[#C8FF00] uppercase tracking-wider font-bold cursor-pointer">Export</span>
+        <span onClick={handleExport} className="text-[9px] text-[#C8FF00] uppercase tracking-wider font-bold cursor-pointer hover:text-[#e2ff66] transition-colors">Export</span>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         <table className="w-full text-left">

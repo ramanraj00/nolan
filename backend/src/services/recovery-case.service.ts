@@ -134,7 +134,39 @@ export class RecoveryCaseService {
           'failureReason', p.failure_reason,
           'gateway', p.gateway,
           'method', p.payment_method
-        ) as payment
+        ) as payment,
+        (
+          SELECT json_build_object(
+            'id', ad.id,
+            'diagnosis', ad.diagnosis,
+            'reasoning', ad.reasoning,
+            'recoveryProbability', ad.recovery_probability,
+            'recommendedAction', ad.recommended_action,
+            'confidence', ad.confidence,
+            'createdAt', ad.created_at
+          )
+          FROM agent_decisions ad WHERE ad.recovery_case_id = rc.id ORDER BY ad.created_at DESC LIMIT 1
+        ) as "agentDecision",
+        (
+          SELECT json_build_object(
+            'id', pd.id,
+            'rulesEvaluated', pd.rule,
+            'passed', pd.allowed,
+            'reason', pd.reason,
+            'createdAt', pd.created_at
+          )
+          FROM policy_decisions pd WHERE pd.recovery_case_id = rc.id ORDER BY pd.created_at DESC LIMIT 1
+        ) as "policyDecision",
+        (
+          SELECT json_build_object(
+            'id', ra.id,
+            'type', ra.type,
+            'status', ra.status,
+            'result', ra.result,
+            'createdAt', ra.created_at
+          )
+          FROM recovery_actions ra WHERE ra.recovery_case_id = rc.id ORDER BY ra.created_at DESC LIMIT 1
+        ) as "recoveryAction"
       FROM recovery_cases rc
       JOIN payments p ON p.id = rc.payment_id
       JOIN customers c ON c.id = p.customer_id

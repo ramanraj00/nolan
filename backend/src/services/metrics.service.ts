@@ -130,7 +130,7 @@ export class MetricsService {
       const avgConf = Number(aiResult.rows[0].averageConfidence) || 0;
       aiPerformance = {
         totalDecisions: Number(aiResult.rows[0].totalDecisions) || 0,
-        averageConfidence: Number((avgConf * 100).toFixed(2))
+        averageConfidence: Number(avgConf.toFixed(2))
       };
     }
 
@@ -188,7 +188,7 @@ export class MetricsService {
     const recoveryCases = Number(row.recoveryCases) || 0;
     const recoveredRevenueToday = Number(row.recoveredRevenueToday) || 0;
     const rawProb = Number(row.averageRecoveryProbability) || 0;
-    const averageRecoveryProbability = Number((rawProb * 100).toFixed(2));
+    const averageRecoveryProbability = Number(rawProb.toFixed(2));
     let recoveryRate = 0;
     if (totalRevenueAtRisk > 0) {
       recoveryRate = (recoveredRevenue / totalRevenueAtRisk) * 100;
