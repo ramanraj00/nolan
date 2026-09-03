@@ -31,7 +31,7 @@ export interface RecoveryAction {
   metadata: Record<string, unknown> | null;
   createdAt: string;
 }
-export interface RecoveryCase { id: string; payment_id: string; merchant_id: string; status: string; revenue_at_risk: number; recovery_probability: number; created_at: string; recovered_at: string | null; }
+export interface RecoveryCase { id: string; paymentId: string; merchantId: string; status: string; revenueAtRisk: number; recoveryProbability: number; createdAt: string; recoveredAt: string | null; customerName: string; diagnosis: string | null; payment: { id: string, amount: number, currency: string, gateway: string, method: string }; }
 export interface AuditEvent { id: string; event_type: string; entity_type: string; entity_id: string; details: Record<string, unknown>; created_at: string; }
 
 export function getDashboardMetrics(merchantId: string, timeframe: string = '7d') {

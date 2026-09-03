@@ -1,10 +1,15 @@
 "use client";
 import { RecoveryAction } from "../../lib/api";
 
+const base = "px-2 py-1 font-black uppercase tracking-widest text-[9px] inline-block";
 const STATUS_COLORS: Record<string, string> = {
-  SUCCESS: "text-[#C8FF00]", EXECUTING: "text-[#32ADE6]", PENDING: "text-[#FF9500]",
-  SCHEDULED: "text-[#FF9500]", FAILED: "text-[#FF3B30]", CANCELLED: "text-[#FF3B30]",
-  PENDING_APPROVAL: "text-[#FF9500]",
+  SUCCESS: `${base} bg-[#C8FF00] text-black`,
+  EXECUTING: `${base} bg-[#32ADE6] text-black`,
+  PENDING: `${base} bg-[#FF9500] text-black`,
+  SCHEDULED: `${base} bg-[#FF9500] text-black`,
+  FAILED: `${base} bg-[#FF3B30] text-white`,
+  CANCELLED: `${base} bg-[#FF3B30] text-white`,
+  PENDING_APPROVAL: `${base} bg-[#FF9500] text-black`,
 };
 
 const TYPE_SHORT: Record<string, string> = {

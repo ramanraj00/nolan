@@ -73,13 +73,18 @@ export class RecoveryCaseService {
         rc.updated_at as "updatedAt", 
         rc.recovered_at as "recoveredAt", 
         rc.closed_at as "closedAt",
+        c.name as "customerName",
         json_build_object(
+          'id', p.razorpay_payment_id,
           'amount', p.amount,
           'currency', p.currency,
-          'failureReason', p.failure_reason
+          'failureReason', p.failure_reason,
+          'gateway', p.gateway,
+          'method', p.payment_method
         ) as payment
       FROM recovery_cases rc
       JOIN payments p ON p.id = rc.payment_id
+      JOIN customers c ON c.id = p.customer_id
       WHERE rc.merchant_id = $1
     `;
     
@@ -92,12 +97,13 @@ export class RecoveryCaseService {
       ];
       const upperStatus = status.toUpperCase();
       
-      if (!allowedStatuses.includes(upperStatus)) {
-        throw new Error('INVALID_STATUS');
+      if (upperStatus !== 'ALL') {
+        if (!allowedStatuses.includes(upperStatus)) {
+          throw new Error('INVALID_STATUS');
+        }
+        values.push(upperStatus);
+        query += ` AND rc.status = $2`;
       }
-      
-      values.push(upperStatus);
-      query += ` AND rc.status = $2`;
     }
 
     query += ` ORDER BY rc.created_at DESC;`;
@@ -120,13 +126,18 @@ export class RecoveryCaseService {
         rc.updated_at as "updatedAt", 
         rc.recovered_at as "recoveredAt", 
         rc.closed_at as "closedAt",
+        c.name as "customerName",
         json_build_object(
+          'id', p.razorpay_payment_id,
           'amount', p.amount,
           'currency', p.currency,
-          'failureReason', p.failure_reason
+          'failureReason', p.failure_reason,
+          'gateway', p.gateway,
+          'method', p.payment_method
         ) as payment
       FROM recovery_cases rc
       JOIN payments p ON p.id = rc.payment_id
+      JOIN customers c ON c.id = p.customer_id
       WHERE rc.id = $1;
     `;
     
