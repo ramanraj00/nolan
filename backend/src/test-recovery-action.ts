@@ -84,13 +84,13 @@ async function testRecoveryActionFlow() {
     console.log('✅ Recovery Action created successfully for ALLOWED policy (Status:', action.status + ')');
     
     // Status Flow Test
-    await RecoveryActionService.updateRecoveryActionStatus(action.id, { status: 'SCHEDULED' });
+    await RecoveryActionService.updateRecoveryActionStatus(action.id, merchantId, { status: 'SCHEDULED' });
     console.log('✅ Transitioned to SCHEDULED');
     
-    await RecoveryActionService.updateRecoveryActionStatus(action.id, { status: 'EXECUTING' });
+    await RecoveryActionService.updateRecoveryActionStatus(action.id, merchantId, { status: 'EXECUTING' });
     console.log('✅ Transitioned to EXECUTING');
     
-    await RecoveryActionService.updateRecoveryActionStatus(action.id, { status: 'SUCCESS', result: 'Recovered' });
+    await RecoveryActionService.updateRecoveryActionStatus(action.id, merchantId, { status: 'SUCCESS', result: 'Recovered' });
     console.log('✅ Transitioned to SUCCESS');
 
   } catch (error: any) {

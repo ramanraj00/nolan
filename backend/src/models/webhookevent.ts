@@ -17,9 +17,11 @@ export interface WebhookEvent {
   merchant_id?: string;            // ID of the merchant (Foreign Key, optional in case it cannot be parsed instantly)
   event_id: string;                // The unique event ID sent by the provider (e.g., Razorpay event ID)
   event_type: string;              // The type of the webhook event (e.g., 'payment.failed')
-  payload: any;                    // The exact raw JSON payload received from the webhook
+  payload: Record<string, unknown>;                    // The exact raw JSON payload received from the webhook
   processed: boolean;              // Boolean flag indicating if the event was successfully processed
   processed_at?: Date;             // Timestamp of when the event was processed
+  processing_started_at?: Date;    // Timestamp of when the worker claimed this event for processing
+  processing_attempts: number;     // Number of times processing was attempted
   created_at: Date;                // Timestamp of when the webhook was received and stored
 }
 
@@ -37,6 +39,8 @@ export const createWebhookEventTable = async () => {
       payload JSONB NOT NULL,
       processed BOOLEAN DEFAULT false,
       processed_at TIMESTAMP,
+      processing_started_at TIMESTAMP,
+      processing_attempts INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `;

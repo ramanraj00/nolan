@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import AnimatedNumber from "./AnimatedNumber";
 
 interface ChartData {
@@ -16,11 +16,8 @@ function formatCurrency(val: number): { value: number; suffix: string; decimals:
 
 export default function RecoveryChart({ data }: { data: ChartData }) {
   const [activeTab, setActiveTab] = useState<"recovered" | "risk">("recovered");
-  const [mounted, setMounted] = useState(false);
   const [animKeyRec, setAnimKeyRec] = useState(0);
   const [animKeyRisk, setAnimKeyRisk] = useState(0);
-
-  useEffect(() => { setTimeout(() => setMounted(true), 150); }, []);
 
   const handleTabChange = (tab: "recovered" | "risk") => {
     setActiveTab(tab);
@@ -34,9 +31,10 @@ export default function RecoveryChart({ data }: { data: ChartData }) {
   // Build chart points from real trend data
   const { pathData, areaPathData, dotPoints, dayLabels } = useMemo(() => {
     let rawData = data.trend;
-    let fallbackLabels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+    const fallbackLabels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
     if (!rawData || rawData.length === 0) {
-      rawData = fallbackLabels.map((_, i) => ({ date: `2026-01-0${i+1}`, recoveredRevenue: Math.random() * 100 }));
+      const fallbackValues = [42, 58, 51, 67, 61, 74, 69];
+      rawData = fallbackLabels.map((_, i) => ({ date: `2026-01-0${i+1}`, recoveredRevenue: fallbackValues[i] }));
     }
 
     const maxVal = Math.max(...rawData.map(t => t.recoveredRevenue), 1);
@@ -125,7 +123,7 @@ export default function RecoveryChart({ data }: { data: ChartData }) {
       </div>
 
       <div className="flex-1 relative w-full mt-2 z-0 min-h-[140px]">
-        <svg viewBox="0 0 360 110" className={`w-full h-full overflow-visible ${mounted ? 'animate-reveal' : 'opacity-0'}`} preserveAspectRatio="none" style={{ filter: dropShadow }}>
+        <svg viewBox="0 0 360 110" className="w-full h-full overflow-visible animate-reveal" preserveAspectRatio="none" style={{ filter: dropShadow }}>
           <defs>
             <linearGradient id="chartGradientRec" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#C8FF00" stopOpacity="0.4" /><stop offset="100%" stopColor="#C8FF00" stopOpacity="0.0" /></linearGradient>
             <linearGradient id="chartGradientRisk" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#A3A3A3" stopOpacity="0.3" /><stop offset="100%" stopColor="#A3A3A3" stopOpacity="0.0" /></linearGradient>

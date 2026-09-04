@@ -123,38 +123,6 @@ function RecoveryCasesContent() {
     }
   };
 
-  const handleExport = () => {
-    if (filteredCases.length === 0) return;
-
-    const headers = [
-      "Case ID", "Payment ID", "Customer Name", "Amount", 
-      "Probability", "Diagnosis", "Action", "Status", "Created At"
-    ];
-    
-    const rows = filteredCases.map(c => [
-      `RC-${(parseInt(c.id.replace(/-/g, '').substring(0, 8), 16) % 9000 + 1000)}`,
-      c.payment?.id || `pay_${c.paymentId.split('-')[0]}`,
-      c.customerName || 'Unknown',
-      c.revenueAtRisk,
-      `${Number(c.recoveryProbability || 0).toFixed(0)}%`,
-      c.diagnosis || 'Analyzing',
-      getRecommendedAction(c.diagnosis),
-      c.status,
-      new Date(c.createdAt).toISOString()
-    ]);
-
-    const escapeCSV = (str: any) => `"${String(str).replace(/"/g, '""')}"`;
-    const csvContent = [headers.join(","), ...rows.map(r => r.map(escapeCSV).join(","))].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `recovery_cases_${new Date().getTime()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const toggleRow = (id: string) => {
     const newSet = new Set(selectedRows);
@@ -271,8 +239,7 @@ function RecoveryCasesContent() {
                   </td>
                 </tr>
               )}
-              {displayCases.map((rc: RecoveryCase, idx: number) => {
-                const firstName = (rc.customerName || 'Unknown').split(' ')[0];
+              {displayCases.map((rc: RecoveryCase) => {
                 return (
                   <tr 
                     key={rc.id} 

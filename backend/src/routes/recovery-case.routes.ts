@@ -30,25 +30,25 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       data: recoveryCase,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating recovery case:', error);
 
-    if (error.message === 'PAYMENT_NOT_FOUND') {
+    if ((error instanceof Error ? error.message : "Unknown error") === 'PAYMENT_NOT_FOUND') {
       res.status(404).json({ error: 'Payment not found' });
       return;
     }
 
-    if (error.message === 'PAYMENT_NOT_FAILED') {
+    if ((error instanceof Error ? error.message : "Unknown error") === 'PAYMENT_NOT_FAILED') {
       res.status(400).json({ error: 'Payment is not eligible for recovery (Status must be FAILED)' });
       return;
     }
 
-    if (error.code === '22P02') {
+    if ((error as { code?: string }).code === '22P02') {
        res.status(400).json({ error: 'Invalid ID format provided' });
        return;
     }
 
-    if (error.code === '23505') {
+    if ((error as { code?: string }).code === '23505') {
        res.status(409).json({ error: 'A recovery case already exists for this payment' });
        return;
     }
@@ -72,15 +72,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const cases = await RecoveryCaseService.getRecoveryCasesByMerchant(merchant_id, status);
 
     res.status(200).json({ data: cases });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching recovery cases:', error);
 
-    if (error.message === 'INVALID_STATUS') {
+    if ((error instanceof Error ? error.message : "Unknown error") === 'INVALID_STATUS') {
       res.status(400).json({ error: 'Invalid status parameter provided' });
       return;
     }
 
-    if (error.code === '22P02') {
+    if ((error as { code?: string }).code === '22P02') {
        res.status(400).json({ error: 'Invalid merchant_id format provided' });
        return;
     }
@@ -93,7 +93,14 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const caseId = String(req.params.id);
 
-    const recoveryCase = await RecoveryCaseService.getRecoveryCaseById(caseId);
+    const merchantId = String(req.query.merchant_id || "");
+
+    if (!merchantId) {
+      res.status(400).json({ error: "merchant_id is required" });
+      return;
+    }
+
+    const recoveryCase = await RecoveryCaseService.getRecoveryCaseById(caseId, merchantId);
 
     if (!recoveryCase) {
        res.status(404).json({ error: 'Recovery case not found' });
@@ -101,10 +108,10 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     }
 
     res.status(200).json({ data: recoveryCase });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching specific recovery case:', error);
     
-    if (error.code === '22P02') {
+    if ((error as { code?: string }).code === '22P02') {
        res.status(400).json({ error: 'Invalid Recovery Case ID format' });
        return;
     }

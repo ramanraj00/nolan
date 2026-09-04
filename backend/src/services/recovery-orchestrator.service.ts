@@ -1,4 +1,4 @@
-import { pool } from '../db';
+
 import { RecoveryCaseService } from './recovery-case.service';
 import { AgentDecisionService } from './agent-decision.service';
 import { PolicyDecisionService } from './policy-decision.service';
@@ -8,21 +8,48 @@ import { AiAgentService } from './ai-agent.service';
 import { CustomerService } from './customer.service';
 import { RecoveryExecutorService } from './recovery-executor.service';
 
+import { Payment } from './payment.service';
+
 export class RecoveryOrchestratorService {
   /**
    * Main entry point for processing a failed payment through the full recovery pipeline.
    * FAILED PAYMENT -> Create Recovery Case -> Analyze failure -> Agent Decision -> Policy Decision -> Allowed -> Action -> Execute -> Recovered?
    */
-  static async processFailedPayment(payment: {
-    id: string;
-    merchantId: string;
-    customerId: string;
-    amount: number;
-    failureReason: string;
-    attemptCount: number;
-    currency: string;
-  }) {
-    // Step 0: Log Event
+  static async processFailedPayment(payment: Payment) {
+    const existingCase = await RecoveryCaseService.getRecoveryCaseByPaymentId(
+      payment.id,
+      payment.merchantId
+    );
+
+    if (existingCase) {
+      return {
+        success: true,
+        skipped: true,
+        reason: 'RECOVERY_CASE_ALREADY_EXISTS',
+        recoveryCaseId: existingCase.id
+      };
+    }
+
+    let recoveryCase;
+    try {
+      // Step 1: Create Recovery Case (Atomic IDempotency Guard)
+      recoveryCase = await RecoveryCaseService.createRecoveryCase({
+        merchantId: payment.merchantId,
+        paymentId: payment.id,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (message === 'RECOVERY_CASE_ALREADY_EXISTS') {
+        return {
+          success: true,
+          skipped: true,
+          reason: 'RECOVERY_CASE_ALREADY_EXISTS'
+        };
+      }
+      throw error;
+    }
+
+    // Step 0: Log Event (Only if we won the case creation race)
     await AuditEventService.createAuditEvent({
       merchantId: payment.merchantId,
       entityType: 'PAYMENT',
@@ -30,14 +57,6 @@ export class RecoveryOrchestratorService {
       eventType: 'PAYMENT_FAILED',
       actor: 'SYSTEM',
       metadata: { reason: payment.failureReason }
-    });
-
-    // Step 1: Create Recovery Case
-    // Mock the required arguments based on the schema subagent expected
-    const recoveryCase = await RecoveryCaseService.createRecoveryCase({
-      merchantId: payment.merchantId,
-      paymentId: payment.id,
-      /* if signature expects more fields they might be optional, let's pass what we have */
     });
 
     await AuditEventService.createAuditEvent({
@@ -49,6 +68,9 @@ export class RecoveryOrchestratorService {
       actor: 'SYSTEM'
     });
 
+    // Transition to ANALYZING
+    await RecoveryCaseService.updateCaseStatus(recoveryCase.id, payment.merchantId, 'ANALYZING');
+
     // Step 2: Fetch Customer Context
     const customer = await CustomerService.getCustomerById(payment.customerId);
 
@@ -56,17 +78,39 @@ export class RecoveryOrchestratorService {
     const aiRecommendation = await AiAgentService.analyzeFailure(payment, customer, recoveryCase.id);
     
     // Step 4: Save Agent Decision
-    const agentDecision = await AgentDecisionService.createAgentDecision({
-      merchantId: payment.merchantId,
-      recoveryCaseId: recoveryCase.id,
-      diagnosis: aiRecommendation.diagnosis,
-      reasoning: aiRecommendation.reasoning,
-      recoveryProbability: aiRecommendation.recovery_probability,
-      recommendedAction: aiRecommendation.recommended_action,
-      recommendedDelay: aiRecommendation.recommended_delay,
-      confidence: aiRecommendation.confidence,
-      model: 'gemini-2.5-flash'
-    });
+    let agentDecision;
+    try {
+      agentDecision = await AgentDecisionService.createAgentDecision({
+        merchantId: payment.merchantId,
+        recoveryCaseId: recoveryCase.id,
+        diagnosis: aiRecommendation.diagnosis,
+        reasoning: aiRecommendation.reasoning,
+        recoveryProbability: aiRecommendation.recovery_probability,
+        recommendedAction: aiRecommendation.recommended_action,
+        recommendedDelay: aiRecommendation.recommended_delay,
+        confidence: aiRecommendation.confidence,
+        model: 'gemini-2.5-flash'
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (message === 'INVALID_AI_RECOMMENDATION') {
+        await RecoveryCaseService.updateCaseStatus(recoveryCase.id, payment.merchantId, 'ESCALATED');
+        await AuditEventService.createAuditEvent({
+          merchantId: payment.merchantId,
+          recoveryCaseId: recoveryCase.id,
+          entityType: 'RECOVERY_CASE',
+          entityId: recoveryCase.id,
+          eventType: 'RECOVERY_ESCALATED',
+          actor: 'SYSTEM',
+          metadata: {
+            reason: 'INVALID_AI_RECOMMENDATION',
+            recommendedAction: aiRecommendation.recommended_action
+          }
+        });
+        return { success: false, reason: 'INVALID_AI_RECOMMENDATION' };
+      }
+      throw error;
+    }
 
     await AuditEventService.createAuditEvent({
       merchantId: payment.merchantId,
@@ -95,6 +139,9 @@ export class RecoveryOrchestratorService {
       metadata: { allowed: policyDecision.allowed, requiresApproval: policyDecision.requiresApproval }
     });
 
+    // Transition to ACTION_PENDING
+    await RecoveryCaseService.updateCaseStatus(recoveryCase.id, payment.merchantId, 'ACTION_PENDING');
+
     // Step 6: Enforcement (Allowed / Escalate / Execute)
     if (policyDecision.allowed) {
       const initialStatus = policyDecision.requiresApproval ? 'PENDING_APPROVAL' : 'PENDING';
@@ -104,7 +151,7 @@ export class RecoveryOrchestratorService {
         recoveryCaseId: recoveryCase.id,
         policyDecisionId: policyDecision.id
       });
-      // Assuming initial status was handled in createRecoveryAction
+      // RecoveryActionService determines the initial action status.
 
       await AuditEventService.createAuditEvent({
         merchantId: payment.merchantId,

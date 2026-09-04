@@ -1,5 +1,21 @@
 import { pool } from '../db';
 
+export type Customer = {
+  id: string;
+  merchantId: string;
+  externalCustomerId: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  status: string;
+  lifetimeValue: string | number;
+  totalPayments: number;
+  successfulPayments: number;
+  failedPayments: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export class CustomerService {
   static async createCustomer(data: {
     merchant_id: string;
@@ -63,7 +79,7 @@ export class CustomerService {
     return dbResult.rows;
   }
 
-  static async getCustomerById(customerId: string) {
+  static async getCustomerById(customerId: string): Promise<Customer | null> {
     const query = `
       SELECT 
         id, 

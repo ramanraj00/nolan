@@ -1,5 +1,20 @@
 import { pool } from '../db';
 
+export type Payment = {
+  id: string;
+  merchantId: string;
+  customerId: string;
+  razorpayPaymentId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  failureReason: string | null;
+  attemptCount: number;
+  createdAt: Date;
+  failedAt: Date | null;
+  recoveredAt: Date | null;
+};
+
 export class PaymentService {
   static async createPayment(data: {
     merchantId: string;
@@ -113,7 +128,7 @@ export class PaymentService {
     return dbResult.rows;
   }
 
-  static async getPaymentById(paymentId: string) {
+  static async getPaymentById(paymentId: string): Promise<Payment | null> {
     const query = `
       SELECT 
         id, 

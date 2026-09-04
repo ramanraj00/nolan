@@ -1,11 +1,19 @@
 import { GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import { Payment } from './payment.service';
+import { Customer } from './customer.service';
 
 dotenv.config();
 
+const geminiApiKey = process.env.GEMINI_API_KEY;
+
+if (!geminiApiKey) {
+  throw new Error('GEMINI_API_KEY is not set in environment.');
+}
+
 // Ensure the API key is provided
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
 // The schema the AI must strictly follow
 const aiDecisionSchema = z.object({
@@ -20,7 +28,11 @@ const aiDecisionSchema = z.object({
     'ESCALATE_HUMAN', 
     'STOP_RECOVERY'
   ]).describe("The best automated or manual action to take next."),
-  recommended_delay: z.number().min(0).describe("Delay in minutes before executing the action (e.g., 1440 for 24 hours)."),
+  recommended_delay: z
+    .number()
+    .min(0)
+    .max(10080)
+    .describe("Delay in minutes before executing the action. Must be between 0 and 10080 minutes (7 days)."),
   confidence: z.number().min(0).max(1).describe("AI confidence in this recommendation (0.0 to 1.0)."),
   reasoning: z.string().describe("Concise explanation for this specific recommendation and delay.")
 });
@@ -31,11 +43,11 @@ export class AiAgentService {
   /**
    * Analyzes a failed payment context using Gemini and returns a structured recovery strategy.
    */
-  static async analyzeFailure(payment: any, customer: any, recoveryCaseId: string): Promise<AiDecision> {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not set in environment. Cannot generate real AI decision.");
-    }
-
+  static async analyzeFailure(
+    payment: Payment,
+    customer: Customer | null,
+    recoveryCaseId: string
+  ): Promise<AiDecision> {
     const prompt = `
     You are an expert Payment Recovery AI Agent for a global merchant platform.
     A payment has failed. Analyze the context and decide the best recovery strategy.
@@ -55,6 +67,14 @@ export class AiAgentService {
     Task:
     Provide a detailed diagnosis, the probability of recovery, the recommended action from the allowed list, the delay in minutes before taking the action, your confidence score, and your reasoning.
     
+    Important:
+    - You are a recommendation engine, not the final authority.
+    - Your output will be evaluated by a separate policy engine before any action is executed.
+    - Never assume that your recommended action will be executed.
+    - Choose only from the allowed actions provided.
+    - Do not invent actions, payment methods, credentials, or gateway capabilities.
+
+
     Guidelines:
     - If it's a temporary issue (like insufficient funds), 'RETRY_PAYMENT' with a 24-48h delay is often best.
     - If the card is permanently invalid/expired, 'REQUEST_PAYMENT_METHOD_UPDATE' immediately (0 delay) is best.
@@ -85,7 +105,11 @@ export class AiAgentService {
                 ],
                 description: "The best automated or manual action to take next." 
               },
-              recommended_delay: { type: "NUMBER", description: "Delay in minutes before executing the action." },
+              recommended_delay: {
+                type: "NUMBER",
+                description:
+                  "Delay in minutes before executing the action. Must be between 0 and 10080 minutes (7 days).",
+              },
               confidence: { type: "NUMBER", description: "AI confidence in this recommendation (0.0 to 1.0)." },
               reasoning: { type: "STRING", description: "Concise explanation for this specific recommendation and delay." }
             },
@@ -100,9 +124,15 @@ export class AiAgentService {
         throw new Error("AI returned empty response");
       }
 
-      const parsedDecision = JSON.parse(responseText);
-      
-      // Validate again with Zod just to be absolutely safe
+      let parsedDecision: unknown;
+
+      try {
+        parsedDecision = JSON.parse(responseText);
+      } catch {
+        throw new Error("AI returned invalid JSON");
+      }
+
+      // Validate the AI response against the application schema.
       return aiDecisionSchema.parse(parsedDecision);
 
     } catch (error) {

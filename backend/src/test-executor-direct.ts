@@ -75,7 +75,7 @@ async function testExecutorDirectFlow() {
   }
 
   // 5. Verify DB Status
-  const finalAction = await RecoveryActionService.getRecoveryActionById(action.id);
+  const finalAction = await RecoveryActionService.getRecoveryActionById(action.id, merchantId);
   if (finalAction.status === 'SUCCESS') {
     console.log('✅ Action status in DB is SUCCESS!');
   } else {

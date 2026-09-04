@@ -123,7 +123,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const eventId = String(req.params.id);
-    const event = await AuditEventService.getAuditEventById(eventId);
+    const merchantId = req.query.merchant_id as string;
+
+    if (!merchantId) {
+      res.status(400).json({ error: 'merchant_id is required' });
+      return;
+    }
+
+    const event = await AuditEventService.getAuditEventById(eventId, merchantId);
 
     if (!event) {
        res.status(404).json({ error: 'Audit event not found' });

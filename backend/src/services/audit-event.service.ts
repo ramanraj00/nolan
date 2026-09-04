@@ -1,14 +1,15 @@
 import { pool } from '../db';
+import { AuditEvent } from '../models/auditevent';
 
 export class AuditEventService {
   static async createAuditEvent(data: {
     merchantId: string;
     recoveryCaseId?: string;
-    entityType?: string;
+    entityType?: AuditEvent['entity_type'];
     entityId?: string;
-    eventType: string;
-    actor: string;
-    metadata?: any;
+    eventType: AuditEvent['event_type'];
+    actor: AuditEvent['actor'];
+    metadata?: Record<string, unknown>;
   }) {
     if (data.recoveryCaseId) {
       const caseCheckQuery = `
@@ -75,7 +76,7 @@ export class AuditEventService {
       WHERE merchant_id = $1
     `;
     
-    const values: any[] = [merchantId];
+    const values: unknown[] = [merchantId];
     let paramIndex = 2;
 
     if (recoveryCaseId) {
@@ -99,7 +100,7 @@ export class AuditEventService {
     return dbResult.rows;
   }
 
-  static async getAuditEventById(eventId: string) {
+  static async getAuditEventById(eventId: string, merchantId: string) {
     const query = `
       SELECT 
         id, 
@@ -112,10 +113,11 @@ export class AuditEventService {
         metadata,
         created_at as "createdAt"
       FROM audit_events
-      WHERE id = $1;
+      WHERE id = $1
+        AND merchant_id = $2;
     `;
     
-    const dbResult = await pool.query(query, [eventId]);
+    const dbResult = await pool.query(query, [eventId, merchantId]);
     return dbResult.rows.length > 0 ? dbResult.rows[0] : null;
   }
 }

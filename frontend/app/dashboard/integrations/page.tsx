@@ -17,7 +17,7 @@ interface WebhookEvent {
   merchantId: string;
   eventId: string;
   eventType: string;
-  payload: any;
+  payload: Record<string, unknown>;
   processed: boolean;
   processedAt: string | null;
   createdAt: string;
@@ -53,7 +53,7 @@ export default function IntegrationsPage() {
         const m = merchants[0];
         setMerchant(m);
 
-        const mid = m.id || (m as any).user_id;
+        const mid = m.id;
         const res = await fetchApi<{ data: WebhookEvent[] }>(`/webhook-events?merchant_id=${mid}`);
         const sorted = res.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setWebhooks(sorted);

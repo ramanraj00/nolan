@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchApi } from "../../../lib/api";
+import { fetchApi, Merchant } from "../../../lib/api";
 
 interface RecoveryAction {
   id: string;
@@ -51,6 +51,7 @@ export default function RecoveryActionsPage() {
   const [filter, setFilter] = useState('ALL');
   const [actions, setActions] = useState<RecoveryAction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [merchantId, setMerchantId] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<RecoveryAction | null>(null);
   const [policyData, setPolicyData] = useState<PolicyDecision | null>(null);
   const [policyLoading, setPolicyLoading] = useState(false);
@@ -62,9 +63,10 @@ export default function RecoveryActionsPage() {
       try {
         let mid = process.env.NEXT_PUBLIC_MERCHANT_ID;
         if (!mid) {
-           const merchants = await fetchApi<any[]>("/merchants");
-           mid = merchants[0].id || merchants[0].user_id;
+           const merchants = await fetchApi<Merchant[]>("/merchants");
+           mid = merchants[0].id;
         }
+        if (mid) setMerchantId(mid);
 
         const res = await fetchApi<{ data: RecoveryAction[] }>(`/recovery-actions?merchant_id=${mid}`);
         setActions(res.data);
@@ -97,8 +99,10 @@ export default function RecoveryActionsPage() {
     } else {
       setSelectedAction(act); // optimistic update for UI speed
       try {
-        const res = await fetchApi<{ data: RecoveryAction }>(`/recovery-actions/${act.id}`);
-        setSelectedAction(res.data);
+        if (merchantId) {
+          const res = await fetchApi<{ data: RecoveryAction }>(`/recovery-actions/${act.id}?merchant_id=${merchantId}`);
+          setSelectedAction(res.data);
+        }
       } catch (err) {
         console.error('Failed to load action details', err);
       }

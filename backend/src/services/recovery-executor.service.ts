@@ -10,8 +10,8 @@ export class RecoveryExecutorService {
    */
   static async executeAction(actionId: string, merchantId: string) {
     // 1. Fetch the action details
-    const action = await RecoveryActionService.getRecoveryActionById(actionId);
-    
+    const action = await RecoveryActionService.getRecoveryActionById(actionId, merchantId);
+
     if (!action) {
       throw new Error('Action not found');
     }
@@ -27,16 +27,17 @@ export class RecoveryExecutorService {
 
     const recoveryCaseId = action.recoveryCaseId;
 
+    const claimedAction = await RecoveryActionService.claimForExecution(
+      actionId,
+      merchantId
+    );
+
+    if (!claimedAction) {
+      console.warn(`[Executor] Action ${actionId} could not be claimed for execution.`);
+      return { success: false, error: 'Execution lock claimed by another worker' };
+    }
+
     try {
-      // 3. State Transition: SCHEDULED (Optional intermediate step for tracking queuing delay)
-      if (action.status === 'PENDING') {
-        await RecoveryActionService.updateRecoveryActionStatus(actionId, { status: 'SCHEDULED' });
-        // Event ACTION_SCHEDULED omitted as it's not in the enum
-      }
-
-      // 4. State Transition: EXECUTING
-      await RecoveryActionService.updateRecoveryActionStatus(actionId, { status: 'EXECUTING' });
-
       await AuditEventService.createAuditEvent({
         merchantId,
         recoveryCaseId,
@@ -47,12 +48,12 @@ export class RecoveryExecutorService {
       });
 
       // 5. Perform the Actual Provider Action (Dynamic based on type)
-      const executionResult = await this.performProviderAction(action.type, action);
+      const executionResult = await this.performProviderAction(claimedAction.type, claimedAction);
 
       // 6. State Transition: SUCCESS
-      await RecoveryActionService.updateRecoveryActionStatus(actionId, { 
-        status: 'SUCCESS', 
-        result: executionResult.message 
+      await RecoveryActionService.updateRecoveryActionStatus(actionId, merchantId, {
+        status: 'SUCCESS',
+        result: executionResult.message
       });
 
       // 7. Mark the case as IN_PROGRESS (waiting for customer to pay the link)
@@ -62,9 +63,9 @@ export class RecoveryExecutorService {
 
     } catch (error: any) {
       // State Transition: FAILED
-      await RecoveryActionService.updateRecoveryActionStatus(actionId, { 
-        status: 'FAILED', 
-        failureReason: error.message || 'Execution failed unexpectedly' 
+      await RecoveryActionService.updateRecoveryActionStatus(actionId, merchantId, {
+        status: 'FAILED',
+        failureReason: error.message || 'Execution failed unexpectedly'
       });
 
       await AuditEventService.createAuditEvent({
@@ -88,13 +89,13 @@ export class RecoveryExecutorService {
    * Approves a PENDING_APPROVAL action, moving it to PENDING so it can be executed.
    */
   static async approveAction(actionId: string, merchantId: string, humanUserId: string) {
-    const action = await RecoveryActionService.getRecoveryActionById(actionId);
-    
+    const action = await RecoveryActionService.getRecoveryActionById(actionId, merchantId);
+
     if (!action || action.status !== 'PENDING_APPROVAL') {
       throw new Error('Action not found or not pending approval');
     }
 
-    const updatedAction = await RecoveryActionService.updateRecoveryActionStatus(actionId, { status: 'PENDING' });
+    const updatedAction = await RecoveryActionService.updateRecoveryActionStatus(actionId, merchantId, { status: 'PENDING' });
 
     await AuditEventService.createAuditEvent({
       merchantId,
@@ -113,14 +114,14 @@ export class RecoveryExecutorService {
     if (actionType === 'RETRY_PAYMENT') {
       const keyId = process.env.RAZORPAY_KEY_ID;
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
-      
+
       if (!keyId || !keySecret) {
          throw new Error("Razorpay credentials missing in environment (.env). Cannot execute real API.");
       }
-      
+
       // Fetch the original payment details to recreate the charge
       const fetchQuery = `
-        SELECT 
+        SELECT
           p.razorpay_payment_id,
           p.amount,
           p.currency,
@@ -133,15 +134,15 @@ export class RecoveryExecutorService {
         WHERE rc.id = $1
       `;
       const dbRes = await pool.query(fetchQuery, [actionData.recoveryCaseId]);
-      
+
       if (dbRes.rows.length === 0) {
          throw new Error("Payment/Customer context not found for execution.");
       }
 
       const payment = dbRes.rows[0];
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
-      
-      // Creating a Payment Link is the safest "Retry" simulation for a Hackathon 
+
+      // Creating a Payment Link is the safest "Retry" simulation for a Hackathon
       // without needing complex recurring tokens.
       const payload = {
         amount: parseInt(payment.amount),
@@ -201,7 +202,7 @@ export class RecoveryExecutorService {
             break;
 
           case 'ESCALATE_HUMAN':
-            // Just a placeholder, usually humans don't execute automatically, 
+            // Just a placeholder, usually humans don't execute automatically,
             // but if an agent acts on an escalated case, they might mark it as done.
             resolve({ message: 'Human intervention recorded.' });
             break;

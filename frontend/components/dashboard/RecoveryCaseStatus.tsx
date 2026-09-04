@@ -14,7 +14,6 @@ const DISPLAY: Record<string, string> = {
 
 export default function RecoveryCaseStatus({ data }: { data: Record<string, number> }) {
   const entries = Object.entries(data).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
-  const total = entries.reduce((s, [, v]) => s + v, 0) || 1;
 
   return (
     <div className="bg-[#111217] rounded-2xl border border-white/5 h-full p-5 flex flex-col relative overflow-hidden">

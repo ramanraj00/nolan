@@ -27,11 +27,34 @@ export class PaymentRecoveryService {
 
       const payment = paymentRes.rows[0];
 
-      // 2. Update Payment to CAPTURED
-      await client.query(
-        'UPDATE payments SET status = $1 WHERE id = $2',
-        ['CAPTURED', payment.id]
+      // Validate Razorpay capture data before mutating local payment state
+      if (
+        parseInt(payment.amount) !== parseInt(String(data.amount)) ||
+        payment.currency !== data.currency
+      ) {
+        throw new Error('Captured payment data mismatch');
+      }
+
+      // 2. Update Payment to CAPTURED (if in a valid prior state)
+      const paymentUpdateRes = await client.query(
+        `
+          UPDATE payments
+          SET status = 'CAPTURED'
+          WHERE id = $1
+            AND status IN ('FAILED', 'AUTHORIZED', 'CREATED')
+        `,
+        [payment.id]
       );
+
+      if (paymentUpdateRes.rowCount === 0) {
+        if (payment.status === 'CAPTURED') {
+          // Duplicate payment.captured webhook — safe idempotent no-op.
+        } else {
+          throw new Error(
+            `Invalid payment state transition: ${payment.status} -> CAPTURED`
+          );
+        }
+      }
 
       // 3. Find active RecoveryCase for that payment
       const caseRes = await client.query(
@@ -53,19 +76,37 @@ export class PaymentRecoveryService {
         return;
       }
 
-      // Amount/Currency Verification
-      if (
-        parseInt(payment.amount) !== parseInt(String(data.amount)) ||
-        payment.currency !== data.currency
-      ) {
-        throw new Error('Captured payment data mismatch');
-      }
-
       // 6. Case -> RECOVERED
-      await client.query(
-        'UPDATE recovery_cases SET status = $1, recovered_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-        ['RECOVERED', recoveryCase.id]
+      const caseUpdateRes = await client.query(
+        `
+          UPDATE recovery_cases
+          SET
+            status = 'RECOVERED',
+            recovered_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = $1
+            AND status IN (
+              'OPEN',
+              'ANALYZING',
+              'ACTION_PENDING',
+              'IN_PROGRESS',
+              'ESCALATED'
+            )
+        `,
+        [recoveryCase.id]
       );
+
+      if (caseUpdateRes.rowCount === 0) {
+        if (recoveryCase.status === 'RECOVERED') {
+          // Duplicate payment.captured webhook — safe idempotent no-op.
+          await client.query('COMMIT');
+          return;
+        } else {
+          throw new Error(
+            `Invalid recovery case transition: ${recoveryCase.status} -> RECOVERED`
+          );
+        }
+      }
 
       // 7. Ensure related RecoveryAction is SUCCESS
       await client.query(

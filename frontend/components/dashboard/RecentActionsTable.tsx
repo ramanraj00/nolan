@@ -32,7 +32,7 @@ export default function RecentActionsTable({ data }: { data: RecoveryAction[] })
       act.createdAt ? new Date(act.createdAt).toISOString() : "",
       act.result || ""
     ]);
-    const escapeCSV = (str: any) => `"${String(str).replace(/"/g, '""')}"`;
+    const escapeCSV = (str: unknown) => `"${String(str).replace(/"/g, '""')}"`;
     const csvContent = [headers.join(","), ...rows.map(r => r.map(escapeCSV).join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);

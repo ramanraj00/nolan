@@ -45,13 +45,13 @@ async function testProcessor() {
   console.log('✅ Processor Result:');
   console.log(JSON.stringify(result, null, 2));
 
-  if (result.data.merchantId === merchantId) {
+  if (result.data?.merchantId === merchantId) {
     console.log('✅ Merchant correctly identified and linked!');
   } else {
     console.error('❌ Merchant linking failed');
   }
 
-  if (result.data.payment.status === 'FAILED') {
+  if (result.data?.payment?.status === 'FAILED') {
     console.log('✅ Payment status correctly mapped!');
   } else {
     console.error('❌ Payment mapping failed');

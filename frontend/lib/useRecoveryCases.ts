@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { RecoveryCase, fetchApi, getRecoveryCases } from "./api";
+import { RecoveryCase, fetchApi, Merchant, getRecoveryCases } from "./api";
 
 export function useRecoveryCases(statusFilter: string = 'All Cases') {
   const [cases, setCases] = useState<RecoveryCase[]>([]);
@@ -8,17 +8,17 @@ export function useRecoveryCases(statusFilter: string = 'All Cases') {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    const cancelled = false;
 
     async function load() {
-      if (!cancelled && cases.length === 0) setLoading(true);
+      if (!cancelled) setLoading(true);
       setError(null);
       try {
         let mid = process.env.NEXT_PUBLIC_MERCHANT_ID;
         if (!mid) {
-           const merchants = await fetchApi<any[]>("/merchants");
+           const merchants = await fetchApi<Merchant[]>("/merchants");
            if (merchants && merchants.length > 0) {
-              mid = merchants[0].id || merchants[0].user_id;
+              mid = merchants[0].id;
            } else {
               throw new Error("No merchants found in the database.");
            }
@@ -46,8 +46,8 @@ export function useRecoveryCases(statusFilter: string = 'All Cases') {
           }
           setCases(data);
         }
-      } catch (err: any) {
-        if (!cancelled) setError(err.message || "Failed to load recovery cases");
+      } catch (err: unknown) {
+        if (!cancelled) setError((err as Error).message || "Failed to load recovery cases");
       } finally {
         if (!cancelled) setLoading(false);
       }

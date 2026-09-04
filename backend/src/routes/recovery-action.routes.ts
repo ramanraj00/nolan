@@ -111,7 +111,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const actionId = String(req.params.id);
-    const action = await RecoveryActionService.getRecoveryActionById(actionId);
+    const merchantId = req.query.merchant_id as string;
+
+    if (!merchantId) {
+      res.status(400).json({ error: 'merchant_id is a required query parameter' });
+      return;
+    }
+
+    const action = await RecoveryActionService.getRecoveryActionById(actionId, merchantId);
 
     if (!action) {
        res.status(404).json({ error: 'Recovery action not found' });
@@ -128,61 +135,6 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     }
 
     res.status(500).json({ error: 'Internal server error while fetching the recovery action' });
-  }
-});
-
-const updateRecoveryActionSchema = z.object({
-  status: z.enum([
-    'PENDING', 'SCHEDULED', 'EXECUTING', 'SUCCESS', 'FAILED', 'CANCELLED'
-  ]),
-  result: z.string().optional(),
-  failureReason: z.string().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional()
-});
-
-router.patch('/:id/status', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const actionId = String(req.params.id);
-    const validationResult = updateRecoveryActionSchema.safeParse(req.body);
-
-    if (!validationResult.success) {
-      res.status(400).json({
-        error: 'Invalid update data',
-        details: validationResult.error.format(),
-      });
-      return;
-    }
-
-    const data = validationResult.data;
-    const action = await RecoveryActionService.updateRecoveryActionStatus(actionId, data);
-
-    res.status(200).json({
-      message: 'Recovery action status updated successfully',
-      data: action
-    });
-
-  } catch (error: any) {
-    console.error('Error updating recovery action:', error);
-    
-    if (error.message === 'NOT_FOUND') {
-      res.status(404).json({ error: 'Recovery action not found' });
-      return;
-    }
-
-    if (error.message && error.message.startsWith('INVALID_TRANSITION_')) {
-      const currentStatus = error.message.split('_')[2];
-      res.status(400).json({ 
-        error: `Invalid state transition. Cannot move from ${currentStatus} to ${req.body.status}.` 
-      });
-      return;
-    }
-
-    if (error.code === '22P02') {
-       res.status(400).json({ error: 'Invalid Recovery Action ID format' });
-       return;
-    }
-
-    res.status(500).json({ error: 'Internal server error while updating the recovery action' });
   }
 });
 

@@ -71,6 +71,35 @@ export class WebhookEventService {
     return dbResult.rows;
   }
 
+  static async claimWebhookEvent(webhookEventId: string) {
+    const query = `
+      UPDATE webhook_events
+      SET processing_started_at = CURRENT_TIMESTAMP,
+          processing_attempts = processing_attempts + 1
+      WHERE id = $1
+        AND processed = false
+        AND (
+          processing_started_at IS NULL
+          OR processing_started_at < CURRENT_TIMESTAMP - INTERVAL '10 minutes'
+        )
+      RETURNING
+        id,
+        merchant_id as "merchantId",
+        event_id as "eventId",
+        event_type as "eventType",
+        payload,
+        processed,
+        processed_at as "processedAt",
+        processing_started_at as "processingStartedAt",
+        processing_attempts as "processingAttempts",
+        created_at as "createdAt";
+    `;
+
+    const dbResult = await pool.query(query, [webhookEventId]);
+
+    return dbResult.rows.length > 0 ? dbResult.rows[0] : null;
+  }
+
   static async getWebhookEventById(id: string) {
     const query = `
       SELECT 

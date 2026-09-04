@@ -80,7 +80,7 @@ async function testRazorpayRetry() {
   }
 
   // 5. Verify Database State Handling
-  const finalAction = await RecoveryActionService.getRecoveryActionById(action.id);
+  const finalAction = await RecoveryActionService.getRecoveryActionById(action.id, merchantId);
   if (finalAction.status === 'FAILED') {
     console.log('✅ Action status gracefully updated to FAILED in DB');
   } else {
@@ -88,7 +88,7 @@ async function testRazorpayRetry() {
     process.exit(1);
   }
 
-  const updatedCase = await RecoveryCaseService.getRecoveryCaseById(recoveryCase.id);
+  const updatedCase = await RecoveryCaseService.getRecoveryCaseById(recoveryCase.id, merchantId);
   if (updatedCase.status === 'ESCALATED') {
     console.log('✅ Recovery Case gracefully ESCALATED in DB');
   } else {

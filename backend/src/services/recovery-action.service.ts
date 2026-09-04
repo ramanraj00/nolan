@@ -3,8 +3,8 @@ import { pool } from '../db';
 export class RecoveryActionService {
   static async createRecoveryAction(data: { merchantId: string; recoveryCaseId: string; policyDecisionId: string; }) {
     const validationQuery = `
-      SELECT 
-        pd.allowed, 
+      SELECT
+        pd.allowed,
         pd.action,
         pd.requires_approval
       FROM policy_decisions pd
@@ -33,8 +33,8 @@ export class RecoveryActionService {
         status
       )
       VALUES ($1, $2, $3, $4)
-      RETURNING 
-        id, 
+      RETURNING
+        id,
         recovery_case_id as "recoveryCaseId",
         policy_decision_id as "policyDecisionId",
         type,
@@ -54,14 +54,27 @@ export class RecoveryActionService {
       initialStatus
     ];
 
-    const dbResult = await pool.query(insertQuery, values);
-    return dbResult.rows[0];
+    try {
+      const dbResult = await pool.query(insertQuery, values);
+      return dbResult.rows[0];
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: string }).code === '23505'
+      ) {
+        throw new Error('RECOVERY_ACTION_ALREADY_EXISTS');
+      }
+
+      throw error;
+    }
   }
 
   static async getRecoveryActions(merchantId: string, recoveryCaseId?: string, type?: string, status?: string) {
     let query = `
-      SELECT 
-        ra.id, 
+      SELECT
+        ra.id,
         ra.recovery_case_id as "recoveryCaseId",
         ra.policy_decision_id as "policyDecisionId",
         ra.type,
@@ -77,7 +90,7 @@ export class RecoveryActionService {
       JOIN recovery_cases rc ON rc.id = ra.recovery_case_id
       WHERE rc.merchant_id = $1
     `;
-    
+
     const values: any[] = [merchantId];
     let paramIndex = 2;
 
@@ -97,91 +110,109 @@ export class RecoveryActionService {
     }
 
     query += ` ORDER BY ra.created_at DESC;`;
-    
+
     const dbResult = await pool.query(query, values);
     return dbResult.rows;
   }
 
-  static async getRecoveryActionById(actionId: string) {
+  static async getRecoveryActionById(actionId: string, merchantId: string) {
     const query = `
-      SELECT 
-        id, 
-        recovery_case_id as "recoveryCaseId",
-        policy_decision_id as "policyDecisionId",
-        type,
-        status,
-        scheduled_at as "scheduledAt",
-        executed_at as "executedAt",
-        completed_at as "completedAt",
-        result,
-        failure_reason as "failureReason",
-        metadata,
-        created_at as "createdAt"
-      FROM recovery_actions
-      WHERE id = $1;
+      SELECT
+        ra.id,
+        ra.recovery_case_id as "recoveryCaseId",
+        ra.policy_decision_id as "policyDecisionId",
+        ra.type,
+        ra.status,
+        ra.scheduled_at as "scheduledAt",
+        ra.executed_at as "executedAt",
+        ra.completed_at as "completedAt",
+        ra.result,
+        ra.failure_reason as "failureReason",
+        ra.metadata,
+        ra.created_at as "createdAt"
+      FROM recovery_actions ra
+      JOIN recovery_cases rc
+        ON rc.id = ra.recovery_case_id
+      WHERE ra.id = $1
+        AND rc.merchant_id = $2;
     `;
-    
-    const dbResult = await pool.query(query, [actionId]);
+
+    const dbResult = await pool.query(query, [actionId, merchantId]);
     return dbResult.rows.length > 0 ? dbResult.rows[0] : null;
   }
 
-  static async updateRecoveryActionStatus(actionId: string, data: { status: string; result?: string; failureReason?: string; metadata?: any }) {
-    const fetchQuery = `SELECT status FROM recovery_actions WHERE id = $1`;
-    const fetchResult = await pool.query(fetchQuery, [actionId]);
-    
-    if (fetchResult.rows.length === 0) {
-      throw new Error('NOT_FOUND');
+  static async updateRecoveryActionStatus(
+    actionId: string,
+    merchantId: string,
+    data: {
+      status: string;
+      result?: string;
+      failureReason?: string;
+      metadata?: Record<string, unknown>;
     }
-    
-    const currentStatus = fetchResult.rows[0].status;
-
+  ) {
     const validTransitions: Record<string, string[]> = {
-      'PENDING_APPROVAL': ['PENDING', 'CANCELLED'],
-      'PENDING': ['SCHEDULED', 'EXECUTING', 'CANCELLED'],
-      'SCHEDULED': ['EXECUTING', 'CANCELLED'],
-      'EXECUTING': ['SUCCESS', 'FAILED'],
-      'SUCCESS': [],
-      'FAILED': [],
-      'CANCELLED': []
+      PENDING_APPROVAL: ['PENDING', 'CANCELLED'],
+      PENDING: ['SCHEDULED', 'EXECUTING', 'CANCELLED'],
+      SCHEDULED: ['EXECUTING', 'CANCELLED'],
+      EXECUTING: ['SUCCESS', 'FAILED'],
+      SUCCESS: [],
+      FAILED: [],
+      CANCELLED: []
     };
 
-    const allowedNextStates = validTransitions[currentStatus] || [];
-    
-    if (!allowedNextStates.includes(data.status)) {
-      throw new Error(`INVALID_TRANSITION_${currentStatus}`);
-    }
-
-    const setClauses: string[] = ['status = $2'];
-    const values: any[] = [actionId, data.status];
-    let paramIndex = 3;
+    const setClauses: string[] = ['status = $3'];
+    const values: unknown[] = [actionId, merchantId, data.status];
+    let paramIndex = 4;
 
     if (data.status === 'SCHEDULED') {
-      setClauses.push(`scheduled_at = CURRENT_TIMESTAMP`);
+      setClauses.push('scheduled_at = CURRENT_TIMESTAMP');
     } else if (data.status === 'EXECUTING') {
-      setClauses.push(`executed_at = CURRENT_TIMESTAMP`);
-    } else if (data.status === 'SUCCESS' || data.status === 'FAILED' || data.status === 'CANCELLED') {
-      setClauses.push(`completed_at = CURRENT_TIMESTAMP`);
+      setClauses.push('executed_at = CURRENT_TIMESTAMP');
+    } else if (
+      data.status === 'SUCCESS' ||
+      data.status === 'FAILED' ||
+      data.status === 'CANCELLED'
+    ) {
+      setClauses.push('completed_at = CURRENT_TIMESTAMP');
     }
 
     if (data.result !== undefined) {
       setClauses.push(`result = $${paramIndex++}`);
       values.push(data.result);
     }
+
     if (data.failureReason !== undefined) {
       setClauses.push(`failure_reason = $${paramIndex++}`);
       values.push(data.failureReason);
     }
+
     if (data.metadata !== undefined) {
       setClauses.push(`metadata = $${paramIndex++}`);
       values.push(data.metadata);
     }
 
+    const currentStatuses = Object.entries(validTransitions)
+      .filter(([, nextStates]) => nextStates.includes(data.status))
+      .map(([currentStatus]) => currentStatus);
+
+    if (currentStatuses.length === 0) {
+      throw new Error(`INVALID_TRANSITION_TO_${data.status}`);
+    }
+
     const updateQuery = `
-      UPDATE recovery_actions 
+      UPDATE recovery_actions
       SET ${setClauses.join(', ')}
       WHERE id = $1
-      RETURNING 
-        id, 
+        AND EXISTS (
+          SELECT 1
+          FROM recovery_cases rc
+          WHERE rc.id = recovery_actions.recovery_case_id
+            AND rc.merchant_id = $2
+        )
+        AND status = ANY($${paramIndex}::text[])
+      RETURNING
+        id,
         recovery_case_id as "recoveryCaseId",
         policy_decision_id as "policyDecisionId",
         type,
@@ -195,7 +226,71 @@ export class RecoveryActionService {
         created_at as "createdAt";
     `;
 
+    values.push(currentStatuses);
+
     const dbResult = await pool.query(updateQuery, values);
+
+    if (dbResult.rows.length === 0) {
+      const existsResult = await pool.query(
+        `
+        SELECT ra.status
+        FROM recovery_actions ra
+        JOIN recovery_cases rc ON rc.id = ra.recovery_case_id
+        WHERE ra.id = $1 AND rc.merchant_id = $2
+        `,
+        [actionId, merchantId]
+      );
+
+      if (existsResult.rows.length === 0) {
+        throw new Error('NOT_FOUND');
+      }
+
+      throw new Error(
+        `INVALID_TRANSITION_${existsResult.rows[0].status}`
+      );
+    }
+
     return dbResult.rows[0];
+  }
+
+  static async claimForExecution(
+    actionId: string,
+    merchantId: string
+  ) {
+    const query = `
+      UPDATE recovery_actions
+      SET
+        status = 'EXECUTING',
+        executed_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+        AND status IN ('PENDING', 'SCHEDULED')
+        AND EXISTS (
+          SELECT 1
+          FROM recovery_cases rc
+          WHERE rc.id = recovery_actions.recovery_case_id
+            AND rc.merchant_id = $2
+        )
+      RETURNING
+        id,
+        recovery_case_id as "recoveryCaseId",
+        policy_decision_id as "policyDecisionId",
+        type,
+        status,
+        scheduled_at as "scheduledAt",
+        executed_at as "executedAt",
+        completed_at as "completedAt",
+        result,
+        failure_reason as "failureReason",
+        metadata,
+        created_at as "createdAt";
+    `;
+
+    const result = await pool.query(query, [actionId, merchantId]);
+
+    if (result.rowCount === 0) {
+      return null;
+    }
+
+    return result.rows[0];
   }
 }

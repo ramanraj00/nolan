@@ -55,8 +55,21 @@ export class RecoveryCaseService {
       initialStatus
     ];
 
-    const dbResult = await pool.query(insertQuery, values);
-    return dbResult.rows[0];
+    try {
+      const dbResult = await pool.query(insertQuery, values);
+      return dbResult.rows[0];
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as any).code === '23505'
+      ) {
+        throw new Error('RECOVERY_CASE_ALREADY_EXISTS');
+      }
+
+      throw error;
+    }
   }
 
   static async getRecoveryCasesByMerchant(merchant_id: string, status?: string) {
@@ -112,7 +125,7 @@ export class RecoveryCaseService {
     return dbResult.rows;
   }
 
-  static async getRecoveryCaseById(caseId: string) {
+  static async getRecoveryCaseById(caseId: string, merchantId: string) {
     const query = `
       SELECT 
         rc.id, 
@@ -170,20 +183,85 @@ export class RecoveryCaseService {
       FROM recovery_cases rc
       JOIN payments p ON p.id = rc.payment_id
       JOIN customers c ON c.id = p.customer_id
-      WHERE rc.id = $1;
+      WHERE rc.id = $1 AND rc.merchant_id = $2;
     `;
     
-    const dbResult = await pool.query(query, [caseId]);
+    const dbResult = await pool.query(query, [caseId, merchantId]);
     return dbResult.rows.length > 0 ? dbResult.rows[0] : null;
   }
   static async updateCaseStatus(caseId: string, merchantId: string, status: string) {
+    const validTransitions: Record<string, string[]> = {
+      OPEN: ['ANALYZING', 'ACTION_PENDING', 'ESCALATED', 'STOPPED', 'UNRECOVERABLE'],
+      ANALYZING: ['ACTION_PENDING', 'IN_PROGRESS', 'ESCALATED', 'STOPPED', 'UNRECOVERABLE'],
+      ACTION_PENDING: ['IN_PROGRESS', 'ESCALATED', 'STOPPED', 'UNRECOVERABLE'],
+      IN_PROGRESS: ['RECOVERED', 'ESCALATED', 'STOPPED', 'UNRECOVERABLE'],
+      ESCALATED: ['IN_PROGRESS', 'RECOVERED', 'STOPPED', 'UNRECOVERABLE'],
+      RECOVERED: [],
+      STOPPED: [],
+      UNRECOVERABLE: []
+    };
+
+    const currentStatuses = Object.entries(validTransitions)
+      .filter(([, allowedStatuses]) => allowedStatuses.includes(status))
+      .map(([currentStatus]) => currentStatus);
+
     const query = `
       UPDATE recovery_cases
-      SET status = $1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $2 AND merchant_id = $3
+      SET
+        status = $1,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+        AND merchant_id = $3
+        AND status = ANY($4::text[])
       RETURNING *;
     `;
-    const dbResult = await pool.query(query, [status, caseId, merchantId]);
+
+    const dbResult = await pool.query(query, [
+      status,
+      caseId,
+      merchantId,
+      currentStatuses
+    ]);
+
+    if (dbResult.rowCount === 0) {
+      const currentResult = await pool.query(
+        `
+          SELECT status
+          FROM recovery_cases
+          WHERE id = $1 AND merchant_id = $2
+        `,
+        [caseId, merchantId]
+      );
+
+      if (currentResult.rows.length === 0) {
+        throw new Error('RECOVERY_CASE_NOT_FOUND');
+      }
+
+      throw new Error(
+        `INVALID_RECOVERY_CASE_TRANSITION: ${currentResult.rows[0].status} -> ${status}`
+      );
+    }
+
     return dbResult.rows[0];
+  }
+
+  static async getRecoveryCaseByPaymentId(
+    paymentId: string,
+    merchantId: string
+  ) {
+    const query = `
+      SELECT *
+      FROM recovery_cases
+      WHERE payment_id = $1
+        AND merchant_id = $2
+      LIMIT 1
+    `;
+
+    const result = await pool.query(query, [
+      paymentId,
+      merchantId
+    ]);
+
+    return result.rows[0] || null;
   }
 }

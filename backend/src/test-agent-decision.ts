@@ -38,7 +38,7 @@ async function testAgentDecisionFlow() {
   console.log('✅ Created Recovery Case:', recoveryCase.id);
 
   // 3. Mock AI Analysis
-  const mockAiRecommendation = await AiAgentService.analyzeFailure(payment, { id: customerId }, recoveryCase.id);
+  const mockAiRecommendation = await AiAgentService.analyzeFailure(payment, { id: customerId } as any, recoveryCase.id);
   console.log('✅ Generated Mock AI Decision');
 
   // 4. Create Agent Decision

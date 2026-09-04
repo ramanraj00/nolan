@@ -1,52 +1,7 @@
 import express, { Request, Response } from 'express';
-import { z } from 'zod';
 import { PolicyDecisionService } from '../services/policy-decision.service';
 
 const router = express.Router();
-
-const createPolicyDecisionSchema = z.object({
-  merchantId: z.string().uuid('Invalid Merchant ID format'),
-  recoveryCaseId: z.string().uuid('Invalid Recovery Case ID format'),
-  agentDecisionId: z.string().uuid('Invalid Agent Decision ID format')
-});
-
-router.post('/', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const validationResult = createPolicyDecisionSchema.safeParse(req.body);
-
-    if (!validationResult.success) {
-      res.status(400).json({
-        error: 'Invalid input data',
-        details: validationResult.error.format(),
-      });
-      return;
-    }
-
-    const decision = await PolicyDecisionService.createPolicyDecision(validationResult.data);
-
-    res.status(201).json({
-      message: 'Policy evaluation completed',
-      data: decision
-    });
-
-  } catch (error: any) {
-    console.error('Error evaluating policy:', error);
-
-    if (error.message === 'RELATIONSHIP_NOT_FOUND') {
-      res.status(404).json({ 
-        error: 'Invalid relationship. Decision or Case not found, or Merchant does not own this data.' 
-      });
-      return;
-    }
-
-    if (error.code === '22P02') {
-       res.status(400).json({ error: 'Invalid ID format provided' });
-       return;
-    }
-
-    res.status(500).json({ error: 'Internal server error while evaluating policy' });
-  }
-});
 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -94,8 +49,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const decisionId = String(req.params.id);
+    const merchantId = req.query.merchant_id as string;
 
-    const decision = await PolicyDecisionService.getPolicyDecisionById(decisionId);
+    if (!merchantId) {
+      res.status(400).json({ error: 'merchant_id is required' });
+      return;
+    }
+
+    const decision = await PolicyDecisionService.getPolicyDecisionById(decisionId, merchantId);
 
     if (!decision) {
        res.status(404).json({ error: 'Policy decision not found' });

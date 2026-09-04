@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchApi } from "../../../lib/api";
+import { fetchApi, Merchant } from "../../../lib/api";
 
 interface AgentDecision {
   id: string;
@@ -31,8 +31,8 @@ export default function AIDecisionsPage() {
       try {
         let mid = process.env.NEXT_PUBLIC_MERCHANT_ID;
         if (!mid) {
-           const merchants = await fetchApi<any[]>("/merchants");
-           mid = merchants[0].id || merchants[0].user_id;
+           const merchants = await fetchApi<Merchant[]>("/merchants");
+           mid = merchants[0].id;
         }
 
         const res = await fetchApi<{ data: AgentDecision[] }>(`/agent-decisions?merchant_id=${mid}`);
@@ -79,7 +79,7 @@ export default function AIDecisionsPage() {
       new Date(d.createdAt).toISOString(),
       d.reasoning
     ]);
-    const escapeCSV = (str: any) => `"${String(str).replace(/"/g, '""')}"`;
+    const escapeCSV = (str: unknown) => `"${String(str).replace(/"/g, '""')}"`;
     const csvContent = [headers.join(","), ...rows.map(r => r.map(escapeCSV).join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);

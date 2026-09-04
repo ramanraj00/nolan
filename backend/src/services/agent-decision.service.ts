@@ -30,6 +30,19 @@ export class AgentDecisionService {
       throw new Error(`INVALID_CASE_STATUS:${recoveryCase.status}`);
     }
 
+    const allowedActions = [
+      'RETRY_PAYMENT',
+      'REQUEST_PAYMENT_METHOD_UPDATE',
+      'SEND_PAYMENT_REMINDER',
+      'SEND_CHECKOUT_RECOVERY',
+      'ESCALATE_HUMAN',
+      'STOP_RECOVERY'
+    ];
+
+    if (!allowedActions.includes(data.recommendedAction)) {
+      throw new Error('INVALID_AI_RECOMMENDATION');
+    }
+
     const insertQuery = `
       INSERT INTO agent_decisions (
         recovery_case_id,

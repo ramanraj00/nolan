@@ -64,11 +64,11 @@ async function runTests() {
       id: paymentId,
       merchantId: merchantId,
       customerId: customerId,
-      amount: 500,
-      currency: 'INR',
-      failureReason: 'insufficient_funds',
+      amount: 499,
+      currency: "USD",
+      failureReason: "mock_insufficient_funds",
       attemptCount: 1
-    });
+    } as any);
 
     console.log('✅ Orchestrator completed without throwing exceptions');
 

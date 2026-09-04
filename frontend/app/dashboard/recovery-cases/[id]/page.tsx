@@ -2,12 +2,12 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { fetchApi, RecoveryCase } from "../../../../lib/api";
+import { fetchApi, RecoveryCaseDetail } from "../../../../lib/api";
 
 export default function CaseDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const [rc, setRc] = useState<RecoveryCase | null>(null);
+  const [rc, setRc] = useState<RecoveryCaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Modal States
@@ -18,7 +18,7 @@ export default function CaseDetailPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetchApi<{ data: any }>(`/recovery-cases/${params.id}`);
+        const res = await fetchApi<{ data: RecoveryCaseDetail }>(`/recovery-cases/${params.id}`);
         const found = res.data;
         if (found) setRc(found);
       } catch (e) {
@@ -56,13 +56,39 @@ export default function CaseDetailPage() {
     }, 2000);
   };
 
+  const normalizeRules = (
+    rules: string[] | string | Record<string, unknown>
+  ): string[] => {
+    if (Array.isArray(rules)) {
+      return rules;
+    }
+
+    if (typeof rules === "string") {
+      try {
+        const parsed: unknown = JSON.parse(rules);
+
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (rule): rule is string => typeof rule === "string"
+          );
+        }
+
+        return [rules];
+      } catch {
+        return [rules];
+      }
+    }
+
+    return [JSON.stringify(rules)];
+  };
+
   return (
     <div className="p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] overflow-y-auto scrollbar-hide bg-[#07080B] relative">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => router.back()}
             className="w-10 h-10 border border-white/10 flex items-center justify-center text-[#888] hover:text-white hover:border-white/30 transition-colors bg-[#111217]"
           >
@@ -77,15 +103,15 @@ export default function CaseDetailPage() {
             <p className="text-[#888] text-xs font-bold tracking-widest uppercase">Failed Payment Recovery</p>
           </div>
         </div>
-        
+
         <div className="flex gap-3">
-          <button 
+          <button
             onClick={() => setShowAudit(true)}
             className="px-6 py-3 border border-white/10 bg-[#111217] text-[#888] hover:text-white hover:border-white/30 text-xs font-bold uppercase tracking-widest transition-colors rounded-none"
           >
             Full Audit Trail
           </button>
-          <button 
+          <button
             onClick={() => setShowAction(true)}
             className="px-6 py-3 border border-[#C8FF00] bg-[#C8FF00] text-black hover:bg-[#b3e600] text-xs font-black uppercase tracking-widest transition-colors rounded-none"
           >
@@ -96,24 +122,24 @@ export default function CaseDetailPage() {
 
       {/* Grid Layout */}
       <div className="grid grid-cols-12 gap-8">
-        
+
         {/* Left Column (The Journey) */}
         <div className="col-span-8 flex flex-col gap-6">
-          
+
           <div className="bg-[#111217] border border-white/5 p-8 flex-1">
              <h2 className="text-white font-bold text-sm tracking-widest uppercase mb-8 flex items-center gap-2">
               <span className="w-2 h-2 bg-[#32ADE6]"></span> Recovery Journey
             </h2>
-            
+
             <div className="relative border-l-2 border-white/5 ml-4 pl-8 flex flex-col gap-8 pb-4">
-              
+
               {/* 1. Payment Failed */}
               <div className="relative">
                 <div className="absolute -left-[39px] top-1 w-4 h-4 bg-[#FF3B30] rounded-none flex items-center justify-center">
                    <div className="w-2 h-2 bg-black rounded-none"></div>
                 </div>
                 <h3 className="text-white font-black text-lg mb-1 tracking-tight">Payment Failed</h3>
-                <p className="text-[#888] text-xs font-bold tracking-widest uppercase mb-3">{dateStr} • Gateway: {(rc.payment as any)?.gateway || 'Razorpay'}</p>
+                <p className="text-[#888] text-xs font-bold tracking-widest uppercase mb-3">{dateStr} • Gateway: {rc.payment?.gateway || 'Razorpay'}</p>
                 <div className="bg-[#0f1015] border border-white/5 p-4 inline-block">
                   <p className="text-[#aaa] text-sm"><span className="text-[#555] uppercase text-[10px] font-bold tracking-widest block mb-1">Raw Error</span> {rc.diagnosis || 'authentication_failed'}</p>
                 </div>
@@ -125,28 +151,28 @@ export default function CaseDetailPage() {
                   <svg className="w-2.5 h-2.5 text-black" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zM9 9V5a1 1 0 112 0v4h2a1 1 0 110 2h-3a1 1 0 01-1-1z" /></svg>
                 </div>
                 <h3 className="text-white font-black text-lg mb-1 tracking-tight">AI Agent Diagnosis</h3>
-                <p className="text-[#888] text-xs font-bold tracking-widest uppercase mb-3">{(rc as any).agentDecision ? new Date((rc as any).agentDecision.createdAt).toLocaleTimeString() : '+ 0.4s'}</p>
+                <p className="text-[#888] text-xs font-bold tracking-widest uppercase mb-3">{rc.agentDecision ? new Date(rc.agentDecision.createdAt).toLocaleTimeString() : '+ 0.4s'}</p>
                 <div className="bg-[#0f1015] border border-[#AF52DE]/20 p-4 border-l-2 border-l-[#AF52DE]">
-                  <p className="text-white text-sm font-medium">Predicted Probability: <span className="text-[#C8FF00] font-black">{Number((rc as any).agentDecision?.recoveryProbability || rc.recoveryProbability || 0).toFixed(0)}%</span></p>
-                  <p className="text-[#aaa] text-xs mt-2">{(rc as any).agentDecision?.reasoning || 'Nolan AI analyzing past patterns for optimal route.'}</p>
+                  <p className="text-white text-sm font-medium">Predicted Probability: <span className="text-[#C8FF00] font-black">{Number(rc.agentDecision?.recoveryProbability || rc.recoveryProbability || 0).toFixed(0)}%</span></p>
+                  <p className="text-[#aaa] text-xs mt-2">{rc.agentDecision?.reasoning || 'Nolan AI analyzing past patterns for optimal route.'}</p>
                 </div>
               </div>
-              
+
               {/* 3. Policy Decision */}
               <div className="relative">
                 <div className="absolute -left-[39px] top-1 w-4 h-4 bg-white/20 rounded-none flex items-center justify-center"></div>
                 <h3 className="text-white font-black text-lg mb-1 tracking-tight">Policy Engine Evaluation</h3>
-                <p className="text-[#888] text-xs font-bold tracking-widest uppercase mb-3">{(rc as any).policyDecision ? new Date((rc as any).policyDecision.createdAt).toLocaleTimeString() : '+ 0.8s'}</p>
+                <p className="text-[#888] text-xs font-bold tracking-widest uppercase mb-3">{rc.policyDecision ? new Date(rc.policyDecision.createdAt).toLocaleTimeString() : '+ 0.8s'}</p>
                 <div className="flex flex-wrap gap-2">
-                  {(rc as any).policyDecision?.rulesEvaluated ? (
-                    (Array.isArray((rc as any).policyDecision.rulesEvaluated) ? (rc as any).policyDecision.rulesEvaluated : ((rc as any).policyDecision.rulesEvaluated as string).startsWith('[') ? JSON.parse((rc as any).policyDecision.rulesEvaluated) : [(rc as any).policyDecision.rulesEvaluated]).map((rule: string, i: number) => (
+                  {rc.policyDecision?.rulesEvaluated ? (
+                    normalizeRules(rc.policyDecision.rulesEvaluated).map((rule, i) => (
                        <span key={i} className="px-2 py-1 bg-white/5 text-[#ccc] text-[10px] font-bold uppercase tracking-widest border border-white/10">Rule: {rule}</span>
                     ))
                   ) : (
                     <span className="px-2 py-1 bg-white/5 text-[#ccc] text-[10px] font-bold uppercase tracking-widest border border-white/10">Rule: Max Retries &lt; 3</span>
                   )}
-                  <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-widest border ${(rc as any).policyDecision?.passed ? 'bg-[#C8FF00]/10 text-[#C8FF00] border-[#C8FF00]/20' : 'bg-[#FF3B30]/10 text-[#FF3B30] border-[#FF3B30]/20'}`}>
-                    {(rc as any).policyDecision?.passed ? 'PASSED' : 'FAILED'}
+                  <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-widest border ${rc.policyDecision?.passed ? 'bg-[#C8FF00]/10 text-[#C8FF00] border-[#C8FF00]/20' : 'bg-[#FF3B30]/10 text-[#FF3B30] border-[#FF3B30]/20'}`}>
+                    {rc.policyDecision?.passed ? 'PASSED' : 'FAILED'}
                   </span>
                 </div>
               </div>
@@ -157,10 +183,10 @@ export default function CaseDetailPage() {
                   <div className="w-2 h-2 bg-black rounded-none"></div>
                 </div>
                 <h3 className="text-white font-black text-lg mb-1 tracking-tight">Recovery Action Triggered</h3>
-                <p className="text-[#888] text-xs font-bold tracking-widest uppercase mb-3">{(rc as any).recoveryAction ? new Date((rc as any).recoveryAction.createdAt).toLocaleTimeString() : '+ 1.2s'}</p>
+                <p className="text-[#888] text-xs font-bold tracking-widest uppercase mb-3">{rc.recoveryAction ? new Date(rc.recoveryAction.createdAt).toLocaleTimeString() : '+ 1.2s'}</p>
                 <div className="bg-[#0f1015] border border-[#FF9500]/20 p-4 inline-block">
-                  <p className="text-[#FF9500] text-sm font-bold tracking-widest uppercase">Action: {((rc as any).recoveryAction?.type || (rc as any).agentDecision?.recommendedAction || 'ESCALATE_HUMAN').replace(/_/g, ' ')}</p>
-                  <p className="text-[#aaa] text-xs mt-1">Status: {(rc as any).recoveryAction?.status || 'PENDING'}</p>
+                  <p className="text-[#FF9500] text-sm font-bold tracking-widest uppercase">Action: {(rc.recoveryAction?.type || rc.agentDecision?.recommendedAction || 'ESCALATE_HUMAN').replace(/_/g, ' ')}</p>
+                  <p className="text-[#aaa] text-xs mt-1">Status: {rc.recoveryAction?.status || 'PENDING'}</p>
                 </div>
               </div>
 
@@ -184,7 +210,7 @@ export default function CaseDetailPage() {
 
         {/* Right Column (Meta Info) */}
         <div className="col-span-4 flex flex-col gap-6 sticky top-8 self-start pb-8">
-          
+
           <div className="bg-[#111217] border border-white/5 p-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#C8FF00]/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
             <h2 className="text-[#888] font-bold text-xs tracking-widest uppercase mb-4 relative z-10">Value Recovered</h2>
@@ -219,11 +245,11 @@ export default function CaseDetailPage() {
             <div className="flex flex-col gap-5">
               <div>
                 <p className="text-[#555] text-[10px] font-bold tracking-widest uppercase mb-1">Gateway</p>
-                <p className="text-white font-bold text-sm">{(rc.payment as any)?.gateway || 'Razorpay'}</p>
+                <p className="text-white font-bold text-sm">{rc.payment?.gateway || 'Razorpay'}</p>
               </div>
               <div>
                 <p className="text-[#555] text-[10px] font-bold tracking-widest uppercase mb-1">Method</p>
-                <p className="text-white font-bold text-sm">{(rc.payment as any)?.method || 'Credit Card'}</p>
+                <p className="text-white font-bold text-sm">{rc.payment?.method || 'Credit Card'}</p>
               </div>
               <div>
                 <p className="text-[#555] text-[10px] font-bold tracking-widest uppercase mb-1">Transaction ID</p>
@@ -233,7 +259,7 @@ export default function CaseDetailPage() {
           </div>
 
           <div className="bg-[#111217] border border-white/5 p-6 mt-4">
-             <button 
+             <button
                onClick={() => setShowAudit(true)}
                className="w-full flex items-center justify-between text-white font-bold text-xs uppercase tracking-widest hover:text-[#C8FF00] transition-colors"
              >
@@ -285,7 +311,7 @@ export default function CaseDetailPage() {
                   </div>
                   <h3 className="text-white font-black text-xl mb-2">Request Manual Action</h3>
                   <p className="text-[#aaa] text-sm mb-8">This will create a manual recovery request for this case. The automated recovery policy will not be bypassed, and execution will require explicit approval.</p>
-                  
+
                   <div className="flex gap-4 w-full">
                     <button onClick={() => setShowAction(false)} className="flex-1 py-3 border border-white/10 bg-[#111217] text-white hover:border-white/30 text-xs font-bold uppercase tracking-widest transition-colors rounded-none">
                       Cancel

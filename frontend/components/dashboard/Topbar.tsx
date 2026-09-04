@@ -1,7 +1,15 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { fetchApi } from "../../lib/api";
+import { fetchApi, Merchant, RecoveryAction, RecoveryCase } from "../../lib/api";
+
+interface Notification {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  link: string;
+}
 
 export default function Topbar() {
   const router = useRouter();
@@ -10,26 +18,25 @@ export default function Topbar() {
 
   const [greeting, setGreeting] = useState("Good morning");
   const [merchantName, setMerchantName] = useState("Loading...");
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Dynamic Greeting
-    const hour = new Date().getHours();
-    if (hour < 5) setGreeting("Good night");
-    else if (hour < 12) setGreeting("Good morning");
-    else if (hour < 18) setGreeting("Good afternoon");
-    else setGreeting("Good evening");
+    const h = new Date().getHours();
+    setTimeout(() => {
+      setGreeting(h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening");
+    }, 0);
 
     // Fetch Merchant & Notifications
     async function loadData() {
       try {
         let mid = process.env.NEXT_PUBLIC_MERCHANT_ID;
         if (!mid) {
-          const merchants = await fetchApi<any[]>("/merchants");
+          const merchants = await fetchApi<Merchant[]>("/merchants");
           if (merchants && merchants.length > 0) {
-            mid = merchants[0].id || merchants[0].user_id;
+            mid = merchants[0].id;
             setMerchantName(merchants[0].name || "Demo Merchant");
           } else {
             setMerchantName("Demo Merchant");
@@ -38,13 +45,13 @@ export default function Topbar() {
         }
         
         if (mid) {
-           const actionsRes = await fetchApi<any>(`/recovery-actions?merchant_id=${mid}`);
+           const actionsRes = await fetchApi<{ data: RecoveryAction[] }>(`/recovery-actions?merchant_id=${mid}`);
            const actions = actionsRes.data || [];
            // Find actions pending approval for notifications
-           const pending = actions.filter((a: any) => a.status === 'PENDING_APPROVAL');
+           const pending = actions.filter((a) => a.status === 'PENDING_APPROVAL');
            
            // Format notifications
-           const notifs = pending.map((p: any) => ({
+           const notifs: Notification[] = pending.map((p) => ({
              id: p.id,
              title: "Manual Approval Required",
              desc: `Action ${p.type} requires human review.`,
@@ -54,10 +61,10 @@ export default function Topbar() {
 
            // If none pending, maybe show recent failed payments
            if (notifs.length === 0) {
-              const casesRes = await fetchApi<any>(`/recovery-cases?merchant_id=${mid}`);
+              const casesRes = await fetchApi<{ data: RecoveryCase[] }>(`/recovery-cases?merchant_id=${mid}`);
               const cases = casesRes.data || [];
-              const recentFailures = cases.filter((c: any) => c.status === 'ESCALATED').slice(0, 3);
-              recentFailures.forEach((c: any) => {
+              const recentFailures = cases.filter((c) => c.status === 'ESCALATED').slice(0, 3);
+              recentFailures.forEach((c) => {
                  notifs.push({
                    id: c.id,
                    title: "Recovery Escalated",
