@@ -11,9 +11,9 @@ export default function WhyPaymentsFail({ data }: { data: FailData }) {
   const sorted = Object.entries(data.failureReasons).sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="bg-[#111217] rounded-2xl border border-white/10 shadow-[0_0_20px_rgba(200,255,0,0.05)] flex-1 h-full p-6 flex flex-col justify-between group">
+    <div className="bg-[#111217] rounded-2xl border border-white/10 shadow-[0_0_20px_rgba(200,255,0,0.05)] flex-1 h-full p-4 xl:p-5 flex flex-col justify-between group">
       
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-1 xl:mb-3">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-[#C8FF00]/10 border border-[#C8FF00]/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_10px_rgba(200,255,0,0.1)]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8FF00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -31,14 +31,14 @@ export default function WhyPaymentsFail({ data }: { data: FailData }) {
         </button>
       </div>
 
-      <div className="flex-1 w-full flex flex-col gap-4 justify-center">
+      <div className="flex-1 w-full flex flex-col gap-2 justify-center">
         {sorted.slice(0, 3).map((r, i) => {
            const label = String(r[0]).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
            const count = Number(r[1]);
            const pct = total > 0 ? ((count / total) * 100).toFixed(0) : "0";
            return (
              <div key={r[0]} className="w-full">
-               <div className="flex items-center justify-between mb-2">
+               <div className="flex items-center justify-between mb-1">
                  <span className="text-zinc-200 text-[11px] font-bold tracking-wide">{label}</span>
                  <div className="flex items-center gap-3">
                    <span className="text-white text-[12px] font-bold tabular-nums">{mounted ? count : 0}</span>

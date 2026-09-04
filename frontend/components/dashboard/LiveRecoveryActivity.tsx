@@ -22,16 +22,16 @@ export default function LiveRecoveryActivity({ data }: { data: FunnelData }) {
 
   const flowData = [
     { label: "Failed Payments", value: total, pct: "100%", color: "#666666" },
-    { label: "Policy Approved", value: policyPassed, pct: total > 0 ? `${((policyPassed / total) * 100).toFixed(1)}%` : "0%", color: "#C8FF00" },
+    { label: "AI Analyzed", value: policyPassed, pct: total > 0 ? `${((policyPassed / total) * 100).toFixed(1)}%` : "0%", color: "#C8FF00" },
     { label: "Action Deployed", value: aiDeployed, pct: total > 0 ? `${((aiDeployed / total) * 100).toFixed(1)}%` : "0%", color: "#C8FF00" },
     { label: "Recovered", value: recovered, pct: total > 0 ? `${((recovered / total) * 100).toFixed(1)}%` : "0%", color: "#C8FF00" },
   ];
 
   return (
-    <div className="relative flex items-center justify-between w-full h-full px-6 gap-2 lg:gap-4" onMouseLeave={() => setHoveredIndex(null)}>
+    <div className="relative flex flex-col lg:flex-row items-center justify-between w-full h-auto lg:h-full py-4 lg:py-0 px-4 xl:px-6 gap-4 lg:gap-4" onMouseLeave={() => setHoveredIndex(null)}>
       {/* Magic Hover Line at the top boundary */}
       <div 
-         className="absolute -top-[1px] h-[2px] bg-[#C8FF00] shadow-[0_0_12px_#C8FF00] transition-all duration-300 ease-out z-20 pointer-events-none"
+         className="hidden lg:block absolute -top-[1px] h-[2px] bg-[#C8FF00] shadow-[0_0_12px_#C8FF00] transition-all duration-300 ease-out z-20 pointer-events-none"
          style={{
            width: '12%',
            left: hoveredIndex !== null ? `${(hoveredIndex * 25) + 12.5}%` : '50%',
@@ -43,7 +43,7 @@ export default function LiveRecoveryActivity({ data }: { data: FunnelData }) {
       {flowData.map((step, i) => (
         <React.Fragment key={i}>
           <div 
-            className="flex flex-col justify-center flex-1 h-full relative overflow-hidden transition-all duration-300 hover:bg-white/[0.01] px-4 rounded-xl cursor-default group" 
+            className="flex flex-col justify-center w-full lg:flex-1 h-auto lg:h-full py-3 lg:py-0 relative overflow-hidden transition-all duration-300 hover:bg-white/[0.01] px-4 rounded-xl cursor-default group" 
             style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(10px)', transitionDelay: mounted ? '0ms' : `${i * 150}ms` }}
             onMouseEnter={() => setHoveredIndex(i)}
           >
@@ -62,7 +62,7 @@ export default function LiveRecoveryActivity({ data }: { data: FunnelData }) {
           </div>
 
           {i < flowData.length - 1 && (
-            <div className="flex-shrink-0 text-zinc-600 transition-all duration-700"
+            <div className="flex-shrink-0 text-zinc-600 transition-all duration-700 rotate-90 lg:rotate-0 my-[-8px] lg:my-0"
                  style={{ opacity: mounted ? 1 : 0, transitionDelay: `${i * 150 + 100}ms` }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6"></polyline>

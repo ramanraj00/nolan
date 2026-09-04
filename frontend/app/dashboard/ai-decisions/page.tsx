@@ -95,13 +95,13 @@ export default function AIDecisionsPage() {
     <div className="h-[calc(100vh-64px)] flex flex-col bg-[#07080B] text-white">
       {/* Header section */}
       <div className="p-8 shrink-0">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between mb-4 lg:mb-8 gap-4 lg:gap-0">
           <div>
             <h1 className="text-3xl font-black tracking-tight mb-2">AI Decisions</h1>
             <p className="text-[#888] text-sm font-medium">Audit log of autonomous agent behavior and reasoning.</p>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 lg:gap-4 w-full lg:w-auto">
             <div className="relative group">
               <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#555] group-focus-within:text-[#32ADE6] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <input 
@@ -121,7 +121,7 @@ export default function AIDecisionsPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden flex flex-col px-8 pb-8">
+      <div className="flex-1 overflow-hidden flex flex-col px-4 pb-4 lg:px-8 lg:pb-8">
         <div className="flex-1 bg-[#111217] border border-white/5 relative flex overflow-hidden">
           
           {/* Table Container */}
@@ -194,7 +194,7 @@ export default function AIDecisionsPage() {
 
           {/* Details Panel */}
           {selectedDecision && (
-            <div className="w-[400px] shrink-0 bg-[#0c0d12] flex flex-col overflow-y-auto">
+            <div className="w-full lg:w-[400px] shrink-0 bg-[#0c0d12] flex flex-col overflow-y-auto absolute lg:relative inset-y-0 right-0 z-50">
               <div className="p-6 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#0c0d12] z-10">
                 <h3 className="text-sm font-bold text-white uppercase tracking-widest">Decision Details</h3>
                 <button onClick={() => setSelectedDecision(null)} className="text-[#888] hover:text-white transition-colors">
@@ -249,7 +249,7 @@ export default function AIDecisionsPage() {
         </div>
         
         {/* Flat Bottom bar */}
-        <div className="h-16 border-t border-white/5 flex items-center justify-between px-8 bg-[#0f1015] shrink-0 outline outline-1 outline-white/5 z-20">
+        <div className="h-auto lg:h-16 py-4 lg:py-0 border-t border-white/5 flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 gap-4 lg:gap-0 bg-[#0f1015] shrink-0 outline outline-1 outline-white/5 z-20">
           <div className="text-[11px] uppercase tracking-widest text-[#555] font-bold">
             Showing {displayDecisions.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredDecisions.length)} of {filteredDecisions.length} entries
           </div>

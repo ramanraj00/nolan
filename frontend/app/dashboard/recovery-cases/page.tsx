@@ -132,11 +132,11 @@ function RecoveryCasesContent() {
   };
 
   return (
-    <div className="p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col bg-[#07080B]">
+    <div className="p-4 lg:p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col bg-[#07080B]">
       
       {/* Top Header Section */}
-      <div className="flex items-center justify-between mb-8 shrink-0">
-        <div className="flex items-center gap-6">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-4 lg:mb-8 gap-4 lg:gap-0 shrink-0">
+        <div className="flex items-center gap-4 lg:gap-6 w-full lg:w-auto justify-between lg:justify-start">
           <h1 className="text-2xl font-black text-white tracking-tight">Recovery Cases</h1>
           {selectedRows.size > 0 && (
              <span className="bg-[#C8FF00]/10 text-[#C8FF00] px-3 py-1 text-xs font-bold uppercase tracking-widest border border-[#C8FF00]/30 rounded-none">
@@ -145,31 +145,31 @@ function RecoveryCasesContent() {
           )}
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 lg:gap-4">
           <button 
             onClick={() => { setFilter('All Cases'); setCurrentPage(1); }}
-            className={`px-4 py-2 border rounded-none text-xs font-bold uppercase tracking-widest transition-colors ${filter === 'All Cases' ? 'bg-[#111217] text-white border-white/30' : 'bg-[#111217] text-[#888] border-white/10 hover:border-white/30 hover:text-white'}`}
+            className={`px-3 py-1.5 lg:px-4 lg:py-2 border rounded-none text-[10px] lg:text-xs font-bold uppercase tracking-widest transition-colors ${filter === 'All Cases' ? 'bg-[#111217] text-white border-white/30' : 'bg-[#111217] text-[#888] border-white/10 hover:border-white/30 hover:text-white'}`}
           >
             All Cases
           </button>
           <button 
             onClick={() => { setFilter('High Risk'); setCurrentPage(1); }}
-            className={`px-4 py-2 border rounded-none text-xs font-bold uppercase tracking-widest transition-colors ${filter === 'High Risk' ? 'bg-[#111217] text-white border-white/30' : 'bg-[#111217] text-[#888] border-white/10 hover:border-white/30 hover:text-white'}`}
+            className={`px-3 py-1.5 lg:px-4 lg:py-2 border rounded-none text-[10px] lg:text-xs font-bold uppercase tracking-widest transition-colors ${filter === 'High Risk' ? 'bg-[#111217] text-white border-white/30' : 'bg-[#111217] text-[#888] border-white/10 hover:border-white/30 hover:text-white'}`}
           >
             High Risk
           </button>
 
-          <div className="relative ml-4" ref={customizeRef}>
+          <div className="relative" ref={customizeRef}>
             <button 
               onClick={() => setShowCustomize(!showCustomize)}
-              className="px-4 py-2 bg-[#C8FF00] text-black border border-[#C8FF00] hover:bg-[#b3e600] rounded-none text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
+              className="px-3 py-1.5 lg:px-4 lg:py-2 bg-[#C8FF00] text-black border border-[#C8FF00] hover:bg-[#b3e600] rounded-none text-[10px] lg:text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
             >
               Customize View
               <svg className={`w-3 h-3 transition-transform ${showCustomize ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
             
             {showCustomize && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-[#111217] border border-white/10 shadow-2xl z-50">
+              <div className="absolute left-0 lg:left-auto lg:right-0 top-full mt-2 w-56 bg-[#111217] border border-white/10 shadow-2xl z-50">
                 <div className="p-3 border-b border-white/5 bg-[#1a1b23]">
                   <h4 className="text-[10px] font-bold text-[#888] uppercase tracking-widest">Toggle Columns</h4>
                 </div>
@@ -291,7 +291,7 @@ function RecoveryCasesContent() {
         </div>
         
         {/* Flat Bottom bar */}
-        <div className="h-16 border-t border-white/5 flex items-center justify-between px-8 bg-[#0f1015] shrink-0">
+        <div className="h-auto lg:h-16 py-4 lg:py-0 border-t border-white/5 flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 gap-4 lg:gap-0 bg-[#0f1015] shrink-0">
           <div className="text-[11px] uppercase tracking-widest text-[#555] font-bold">
             Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredCases.length)} of {filteredCases.length} entries
           </div>

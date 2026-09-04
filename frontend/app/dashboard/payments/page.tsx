@@ -28,6 +28,7 @@ export default function PaymentsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showMobileFilter, setShowMobileFilter] = useState(false);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -128,13 +129,13 @@ export default function PaymentsPage() {
     <div className="h-[calc(100vh-64px)] flex flex-col bg-[#07080B] text-white">
       {/* Header section */}
       <div className="p-8 shrink-0">
-        <div className="flex items-end justify-between mb-8">
+        <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between mb-4 lg:mb-8 gap-4 lg:gap-0">
           <div>
             <h1 className="text-3xl font-black tracking-tight mb-2">Payments</h1>
             <p className="text-[#888] text-sm font-medium">Raw transaction logs from your gateway.</p>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 lg:gap-4 w-full lg:w-auto">
             <div className="relative group">
               <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#555] group-focus-within:text-[#C8FF00] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <input 
@@ -153,25 +154,57 @@ export default function PaymentsPage() {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2 border-b border-white/10 pb-4">
-          {['ALL', 'SUCCESSFUL', 'FAILED', 'REFUNDED'].map(f => (
+        <div className="border-b border-white/10 pb-4">
+          {/* Mobile View: Dropdown Filter */}
+          <div className="lg:hidden relative">
             <button
-              key={f}
-              onClick={() => { setStatusFilter(f); setCurrentPage(1); }}
-              className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] transition-all rounded-none ${
-                statusFilter === f 
-                  ? 'bg-white text-black' 
-                  : 'text-[#888] hover:text-white hover:bg-white/5'
-              }`}
+              onClick={() => setShowMobileFilter(!showMobileFilter)}
+              className="px-4 py-3 bg-[#111217] text-white border border-white/20 hover:border-white/40 flex items-center justify-between w-full text-[10px] font-bold uppercase tracking-[0.2em] rounded-none"
             >
-              {f}
+              <span>{statusFilter === 'ALL' ? 'ALL PAYMENTS' : statusFilter}</span>
+              <svg className={`w-4 h-4 transition-transform ${showMobileFilter ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
-          ))}
+            
+            {showMobileFilter && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1b23] border border-white/20 z-50 flex flex-col shadow-2xl">
+                {['ALL', 'SUCCESSFUL', 'FAILED', 'REFUNDED'].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => { setStatusFilter(f); setCurrentPage(1); setShowMobileFilter(false); }}
+                    className={`px-4 py-4 text-[10px] text-left font-bold uppercase tracking-[0.2em] transition-all border-b border-white/5 last:border-none ${
+                      statusFilter === f 
+                        ? 'bg-white/10 text-[#C8FF00]' 
+                        : 'text-[#888] hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Desktop View: Tab Buttons */}
+          <div className="hidden lg:flex items-center gap-2">
+            {['ALL', 'SUCCESSFUL', 'FAILED', 'REFUNDED'].map(f => (
+              <button
+                key={f}
+                onClick={() => { setStatusFilter(f); setCurrentPage(1); }}
+                className={`px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] transition-all rounded-none ${
+                  statusFilter === f 
+                    ? 'bg-white text-black' 
+                    : 'text-[#888] hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Main Table Area */}
-      <div className="flex-1 overflow-hidden flex flex-col px-8 pb-8">
+      <div className="flex-1 overflow-hidden flex flex-col px-4 pb-4 lg:px-8 lg:pb-8">
         <div className="flex-1 overflow-auto bg-[#111217] border border-white/5 relative">
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead className="sticky top-0 bg-[#0f1015] z-10 outline outline-1 outline-white/5">
@@ -245,7 +278,7 @@ export default function PaymentsPage() {
         </div>
         
         {/* Flat Bottom bar */}
-        <div className="h-16 border-t border-white/5 flex items-center justify-between px-8 bg-[#0f1015] shrink-0 outline outline-1 outline-white/5">
+        <div className="h-auto lg:h-16 py-4 lg:py-0 border-t border-white/5 flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 gap-4 lg:gap-0 bg-[#0f1015] shrink-0 outline outline-1 outline-white/5">
           <div className="text-[11px] uppercase tracking-widest text-[#555] font-bold">
             Showing {displayPayments.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredPayments.length)} of {filteredPayments.length} entries
           </div>

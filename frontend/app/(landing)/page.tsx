@@ -28,18 +28,12 @@ export default function Home() {
         </div>
         
         <div className="flex items-center gap-6">
-          <a href="https://github.com/ramanraj00/nolan" target="_blank" rel="noopener noreferrer" className="text-[#A3A3A3] hover:text-white transition-colors flex items-center gap-2">
+          <a href="https://github.com/ramanraj00/nolan" target="_blank" rel="noopener noreferrer" className="flex items-center text-xs font-bold text-white hover:text-[#C8FF00] transition-colors gap-2">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
               <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
             </svg>
-            <span className="text-sm font-medium hidden sm:block">GitHub</span>
+            <span className="px-2 py-2 tracking-wide uppercase">GitHub</span>
           </a>
-          <button className="flex items-center text-xs font-bold text-white hover:text-[#C8FF00] transition-colors">
-            <span className="px-3 py-2">SIGN IN</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="ml-1">
-              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
         </div>
       </nav>
 
@@ -59,24 +53,24 @@ export default function Home() {
             </p>
             
             <div className="flex flex-wrap items-center gap-4">
-              <button className="px-6 py-2.5 bg-[#C8FF00] hover:bg-[#b5e600] text-black font-semibold  transition-colors text-sm">
-                Check Docs
-              </button>
-              <button className="px-6 py-2.5 bg-transparent border border-[#333333] hover:border-white text-white font-medium  transition-colors text-sm">
-                Sign Up
-              </button>
+              <a href="/nolan-docs.html" target="_blank" rel="noopener noreferrer" className="px-6 py-2.5 bg-[#C8FF00] hover:bg-[#b5e600] text-black font-semibold transition-colors text-sm inline-block">
+                Architecture
+              </a>
+              <a href="/dashboard" className="px-6 py-2.5 bg-transparent border border-[#333333] hover:border-white text-white font-medium transition-colors text-sm inline-block">
+                View
+              </a>
             </div>
           </div>
 
           {/* Right side Request a Demo Button */}
-          <button className="flex items-center text-xs font-bold bg-[#111111] text-white hover:bg-[#222222] transition-colors shrink-0 border border-white/5 overflow-hidden group">
+          <a href="/dashboard" className="flex items-center text-xs font-bold bg-[#111111] text-white hover:bg-[#222222] transition-colors shrink-0 border border-white/5 overflow-hidden group">
             <span className="px-5 py-3 tracking-widest">REQUEST A DEMO</span>
             <span className="px-4 py-3 bg-[#C8FF00] group-hover:bg-[#b5e600] transition-colors text-black flex items-center justify-center border-l border-white/5">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </span>
-          </button>
+          </a>
           
         </div>
 

@@ -105,8 +105,8 @@ export default function IntegrationsPage() {
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-[#07080B] text-white overflow-hidden">
       {/* Header */}
-      <div className="p-8 shrink-0 pb-6 border-b border-white/5">
-        <div className="flex items-end justify-between">
+      <div className="p-4 lg:p-8 shrink-0 pb-4 lg:pb-6 border-b border-white/5">
+        <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4 lg:gap-0">
           <div>
             <h1 className="text-3xl font-black tracking-tight mb-2">Integrations</h1>
             <p className="text-[#888] text-sm font-medium">Payment gateway connections and webhook pipeline status.</p>
@@ -114,12 +114,12 @@ export default function IntegrationsPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 py-8 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6 lg:px-8 lg:py-8 flex flex-col gap-6">
 
         {/* Connection Status Card */}
         <div className="bg-[#111217] border border-white/5 p-8">
-          <div className="flex items-start justify-between mb-8">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-start justify-between mb-4 lg:mb-8 gap-4 lg:gap-0">
+            <div className="flex flex-wrap items-center gap-2 lg:gap-4 w-full lg:w-auto">
               <div className="w-12 h-12 bg-[#32ADE6]/10 border border-[#32ADE6]/20 flex items-center justify-center">
                 <svg className="w-7 h-7 text-[#32ADE6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
@@ -137,7 +137,7 @@ export default function IntegrationsPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <div className="bg-white/5 border border-white/10 p-4">
               <div className="text-[9px] font-bold text-[#666] uppercase tracking-widest mb-1">Account ID</div>
               <div className="text-white font-mono text-sm">{merchant?.razorpay_account_id || '-'}</div>
@@ -158,9 +158,9 @@ export default function IntegrationsPage() {
         </div>
 
         {/* Webhook Status + Stats */}
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-[#111217] border border-white/5 p-6 col-span-2">
-            <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          <div className="bg-[#111217] border border-white/5 p-6 col-span-1 lg:col-span-2">
+            <div className="flex flex-col lg:flex-row items-center lg:items-start lg:justify-between gap-4 lg:gap-0">
               <h3 className="text-[10px] font-bold text-[#888] uppercase tracking-widest">Webhook Pipeline</h3>
               <span className={`px-3 py-1.5 font-black uppercase tracking-widest text-[9px] ${
                 totalEvents > 0 ? 'bg-[#C8FF00] text-black' : 'bg-[#555] text-white'
@@ -169,7 +169,7 @@ export default function IntegrationsPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white/5 border border-white/10 p-4 text-center">
                 <div className="text-2xl font-black text-white tabular-nums">{totalEvents}</div>
                 <div className="text-[9px] font-bold text-[#888] uppercase tracking-widest mt-1">Received</div>
@@ -222,7 +222,7 @@ export default function IntegrationsPage() {
         {/* Visual Pipeline */}
         <div className="bg-[#111217] border border-white/5 p-8">
           <h3 className="text-[10px] font-bold text-[#888] uppercase tracking-widest mb-8">Webhook Processing Pipeline</h3>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row items-center lg:items-start lg:justify-between gap-6 lg:gap-0">
             {[
               { label: 'RAZORPAY', color: '#32ADE6', desc: 'Payment Gateway' },
               { label: 'WEBHOOK RECEIVED', color: '#C8FF00', desc: `${totalEvents} events` },
@@ -230,7 +230,7 @@ export default function IntegrationsPage() {
               { label: 'PROCESSOR', color: '#FF9500', desc: `${processedEvents} processed` },
               { label: 'RECOVERY ENGINE', color: '#C8FF00', desc: `${processedEvents} actioned` },
             ].map((step, i, arr) => (
-              <div key={step.label} className="flex items-center">
+              <div key={step.label} className="flex flex-col lg:flex-row items-center">
                 <div className="flex flex-col items-center">
                   <div
                     className="w-3 h-3 rounded-full mb-2"
@@ -242,7 +242,7 @@ export default function IntegrationsPage() {
                   <div className="text-[9px] font-bold text-[#888] mt-1">{step.desc}</div>
                 </div>
                 {i < arr.length - 1 && (
-                  <div className="w-16 h-[2px] mx-4 mt-[-18px]" style={{ backgroundColor: `${step.color}40` }} />
+                  <div className="w-[2px] h-8 lg:w-16 lg:h-[2px] my-2 lg:my-0 lg:mx-4 lg:mt-[-18px]" style={{ backgroundColor: `${step.color}40` }} />
                 )}
               </div>
             ))}
@@ -254,7 +254,7 @@ export default function IntegrationsPage() {
           <div className="p-6 border-b border-white/5">
             <h3 className="text-[10px] font-bold text-[#888] uppercase tracking-widest">Recent Webhook Activity</h3>
           </div>
-          <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto"><table className="w-full text-left border-collapse whitespace-nowrap">
             <thead className="bg-[#0f1015]">
               <tr>
                 <th className="py-4 px-6 text-[9px] font-bold text-[#666] uppercase tracking-[0.2em]">Event ID</th>
@@ -296,7 +296,7 @@ export default function IntegrationsPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
 
       </div>

@@ -104,8 +104,8 @@ export default function Topbar() {
     <header className="h-16 w-full bg-[#0a0a0a] border-b border-white/5 flex items-center justify-between px-6 shrink-0 z-50 relative">
       
       {/* Left: Greeting */}
-      <div className="flex items-center gap-4">
-        <h1 className="text-white text-lg font-medium tracking-tight">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0 shrink">
+        <h1 className="text-white text-base sm:text-lg font-medium tracking-tight truncate">
           {greeting}, <span className="text-[#C8FF00] font-bold">{merchantName.split(' ')[0]}</span>
         </h1>
       </div>
@@ -175,7 +175,7 @@ export default function Topbar() {
         </div>
 
         {/* Merchant Dropdown (Visual Only) */}
-        <div className="h-8 px-3 border border-white/10 rounded-md flex items-center gap-2 text-sm text-white cursor-pointer hover:bg-white/5 transition-colors">
+        <div className="hidden sm:flex h-8 px-3 border border-white/10 rounded-md items-center gap-2 text-sm text-white cursor-pointer hover:bg-white/5 transition-colors">
           <div className="w-4 h-4 bg-purple-500 rounded-sm"></div>
           <span className="max-w-[100px] truncate">{merchantName}</span>
           <svg className="w-3 h-3 text-[#666]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

@@ -46,8 +46,8 @@ export class MetricsService {
       ),
       payment_metrics AS (
         SELECT COUNT(id) AS "failedPayments"
-        FROM payments
-        WHERE merchant_id = $1 AND status = 'FAILED' ${dateFilterPm}
+        FROM recovery_cases
+        WHERE merchant_id = $1 ${dateFilterRc}
       )
       SELECT 
         cm."recoveryCases",
@@ -107,7 +107,7 @@ export class MetricsService {
     const reasonQuery = `
       SELECT COALESCE(UPPER(failure_reason), 'UNKNOWN') AS reason, COUNT(id) AS count
       FROM payments
-      WHERE merchant_id = $1 AND status = 'FAILED' ${dateFilterPm}
+      WHERE merchant_id = $1 AND failure_reason IS NOT NULL
       GROUP BY COALESCE(UPPER(failure_reason), 'UNKNOWN');
     `;
     const reasonResult = await pool.query(reasonQuery, [merchantId]);

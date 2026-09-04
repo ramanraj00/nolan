@@ -21,7 +21,7 @@ export default function RecoveryCaseStatus({ data }: { data: Record<string, numb
         <h3 className="text-zinc-400 font-bold text-[10px] tracking-widest uppercase">Case Status</h3>
         <div className="w-2 h-2 bg-[#C8FF00] rounded-full shadow-[0_0_8px_#C8FF00] animate-pulse"></div>
       </div>
-      <div className="flex-1 flex flex-col justify-between overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-start gap-2 pt-1 overflow-y-auto">
         {entries.map(([status, count]) => (
           <div key={status} className="flex justify-between items-center group cursor-pointer">
             <span className={`text-[10px] font-bold ${STATUS_COLORS[status] || 'text-white'}`}>{DISPLAY[status] || status}</span>

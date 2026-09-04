@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { fetchApi, RecoveryCaseDetail } from "../../../../lib/api";
+import { fetchApi, RecoveryCaseDetail, Merchant } from "../../../../lib/api";
 
 export default function CaseDetailPage() {
   const params = useParams();
@@ -18,7 +18,10 @@ export default function CaseDetailPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetchApi<{ data: RecoveryCaseDetail }>(`/recovery-cases/${params.id}`);
+        const merchants = await fetchApi<Merchant[]>("/merchants");
+        if (!merchants || merchants.length === 0) throw new Error("No merchant");
+        const mid = merchants[0].id;
+        const res = await fetchApi<{ data: RecoveryCaseDetail }>(`/recovery-cases/${params.id}?merchant_id=${mid}`);
         const found = res.data;
         if (found) setRc(found);
       } catch (e) {
@@ -31,13 +34,13 @@ export default function CaseDetailPage() {
   }, [params.id]);
 
   if (loading) return (
-    <div className="p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] flex items-center justify-center bg-[#07080B]">
+    <div className="p-4 lg:p-5 lg:p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] flex items-center justify-center bg-[#07080B]">
       <div className="w-8 h-8 border-4 border-[#C8FF00] border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 
   if (!rc) return (
-    <div className="p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-[#07080B]">
+    <div className="p-4 lg:p-5 lg:p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] flex flex-col items-center justify-center bg-[#07080B]">
       <h1 className="text-white text-2xl font-bold mb-4">Case Not Found</h1>
       <button onClick={() => router.back()} className="px-6 py-2 bg-[#111217] text-white border border-white/20 hover:border-[#C8FF00] transition-colors rounded-none font-bold tracking-widest text-xs uppercase">
         Go Back
@@ -83,11 +86,11 @@ export default function CaseDetailPage() {
   };
 
   return (
-    <div className="p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] overflow-y-auto scrollbar-hide bg-[#07080B] relative">
+    <div className="p-4 lg:p-5 lg:p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] overflow-y-auto scrollbar-hide bg-[#07080B] relative">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 lg:mb-8 gap-4 lg:gap-0">
+        <div className="flex items-start lg:items-center gap-3 lg:gap-4">
           <button
             onClick={() => router.back()}
             className="w-10 h-10 border border-white/10 flex items-center justify-center text-[#888] hover:text-white hover:border-white/30 transition-colors bg-[#111217]"
@@ -104,16 +107,16 @@ export default function CaseDetailPage() {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col lg:flex-row gap-2 lg:gap-3 w-full lg:w-auto">
           <button
             onClick={() => setShowAudit(true)}
-            className="px-6 py-3 border border-white/10 bg-[#111217] text-[#888] hover:text-white hover:border-white/30 text-xs font-bold uppercase tracking-widest transition-colors rounded-none"
+            className="w-full lg:w-auto px-4 lg:px-6 py-3 border border-white/10 bg-[#111217] text-[#888] hover:text-white hover:border-white/30 text-xs font-bold uppercase tracking-widest transition-colors rounded-none"
           >
             Full Audit Trail
           </button>
           <button
             onClick={() => setShowAction(true)}
-            className="px-6 py-3 border border-[#C8FF00] bg-[#C8FF00] text-black hover:bg-[#b3e600] text-xs font-black uppercase tracking-widest transition-colors rounded-none"
+            className="w-full lg:w-auto px-4 lg:px-6 py-3 border border-[#C8FF00] bg-[#C8FF00] text-black hover:bg-[#b3e600] text-xs font-black uppercase tracking-widest transition-colors rounded-none"
           >
             Request Manual Action
           </button>
@@ -121,17 +124,17 @@ export default function CaseDetailPage() {
       </div>
 
       {/* Grid Layout */}
-      <div className="grid grid-cols-12 gap-8">
+      <div className="grid grid-cols-12 gap-4 lg:gap-5 lg:p-8">
 
         {/* Left Column (The Journey) */}
-        <div className="col-span-8 flex flex-col gap-6">
+        <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
 
-          <div className="bg-[#111217] border border-white/5 p-8 flex-1">
+          <div className="bg-[#111217] border border-white/5 p-5 lg:p-8 flex-1">
              <h2 className="text-white font-bold text-sm tracking-widest uppercase mb-8 flex items-center gap-2">
               <span className="w-2 h-2 bg-[#32ADE6]"></span> Recovery Journey
             </h2>
 
-            <div className="relative border-l-2 border-white/5 ml-4 pl-8 flex flex-col gap-8 pb-4">
+            <div className="relative border-l-2 border-white/5 ml-4 pl-8 flex flex-col gap-5 lg:p-8 pb-4">
 
               {/* 1. Payment Failed */}
               <div className="relative">
@@ -209,7 +212,7 @@ export default function CaseDetailPage() {
         </div>
 
         {/* Right Column (Meta Info) */}
-        <div className="col-span-4 flex flex-col gap-6 sticky top-8 self-start pb-8">
+        <div className="col-span-12 lg:col-span-4 flex flex-col gap-6 sticky top-5 lg:p-8 self-start pb-8">
 
           <div className="bg-[#111217] border border-white/5 p-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#C8FF00]/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
@@ -275,15 +278,15 @@ export default function CaseDetailPage() {
       {/* Audit Modal */}
       {showAudit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0f1015] border border-white/10 w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+          <div className="bg-[#0f1015] border border-white/10 w-[90vw] max-w-[90vw] lg:w-full lg:max-w-2xl m-4 lg:m-0 max-h-[80vh] flex flex-col shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#111217]">
               <h3 className="text-white font-bold text-xs uppercase tracking-widest">Audit Trail Payload</h3>
               <button onClick={() => setShowAudit(false)} className="text-[#888] hover:text-white">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            <div className="p-6 overflow-y-auto">
-              <pre className="text-[#C8FF00] font-mono text-[11px] leading-relaxed">
+            <div className="p-4 lg:p-6 overflow-auto w-full">
+              <pre className="text-[#C8FF00] font-mono text-[8px] lg:text-[11px] leading-relaxed overflow-x-auto">
 {JSON.stringify(rc, null, 2)}
               </pre>
             </div>
@@ -294,8 +297,8 @@ export default function CaseDetailPage() {
       {/* Force Action Modal */}
       {showAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#0f1015] border border-white/10 w-full max-w-md shadow-2xl">
-            <div className="p-8 flex flex-col items-center text-center">
+          <div className="bg-[#0f1015] border border-white/10 w-[90vw] max-w-[90vw] lg:w-full lg:max-w-md m-4 lg:m-0 shadow-2xl">
+            <div className="p-5 lg:p-8 flex flex-col items-center text-center">
               {actionSuccess ? (
                 <>
                   <div className="w-12 h-12 bg-[#C8FF00]/10 flex items-center justify-center mb-4 border border-[#C8FF00]/30">

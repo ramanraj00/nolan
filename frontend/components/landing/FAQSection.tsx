@@ -75,10 +75,10 @@ export default function FAQSection() {
             Failed payments don’t always mean lost customers. RecoverAI identifies revenue at risk, understands why a payment failed, and determines the safest way to recover it — while keeping every decision measurable and auditable.
           </p>
           <div>
-            <button className="px-6 py-3 bg-white text-black font-semibold hover:bg-[#C8FF00] transition-colors flex items-center gap-2 group">
+            <a href="/dashboard" className="inline-flex px-6 py-3 bg-white text-black font-semibold hover:bg-[#C8FF00] transition-colors items-center gap-2 group">
               See How It Works
               <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </button>
+            </a>
           </div>
           
           <div className="mt-16 pt-8 border-t border-white/10">

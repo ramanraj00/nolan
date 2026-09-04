@@ -116,9 +116,9 @@ export default function RecoveryChart({ data }: { data: ChartData }) {
             </div>
           </div>
         </div>
-        <div className="flex p-1 bg-black/40 border border-white/5 rounded-md shrink-0">
-          <button onClick={() => handleTabChange("recovered")} className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-500 ${activeTab === "recovered" ? "bg-[#111217] text-[#C8FF00] border border-white/10 shadow-md" : "text-zinc-400 hover:text-white border border-transparent"}`}>Recovered</button>
-          <button onClick={() => handleTabChange("risk")} className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-500 ${activeTab === "risk" ? "bg-[#111217] text-white border border-white/10 shadow-md" : "text-zinc-400 hover:text-white border border-transparent"}`}>At Risk</button>
+        <div className="flex flex-col lg:flex-row w-max lg:w-auto p-1 bg-black/40 border border-white/5 rounded-md shrink-0 self-start lg:self-auto gap-1 lg:gap-0">
+          <button onClick={() => handleTabChange("recovered")} className={`w-full lg:w-auto px-2 py-1 lg:px-2.5 lg:py-1 text-[9px] lg:text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-500 ${activeTab === "recovered" ? "bg-[#111217] text-[#C8FF00] border border-white/10 shadow-md" : "text-zinc-400 hover:text-white border border-transparent"}`}>Recovered</button>
+          <button onClick={() => handleTabChange("risk")} className={`w-full lg:w-auto px-2 py-1 lg:px-2.5 lg:py-1 text-[9px] lg:text-[10px] font-bold uppercase tracking-wider rounded transition-all duration-500 ${activeTab === "risk" ? "bg-[#111217] text-white border border-white/10 shadow-md" : "text-zinc-400 hover:text-white border border-transparent"}`}>At Risk</button>
         </div>
       </div>
 

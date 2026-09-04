@@ -29,7 +29,7 @@ export default function MetricsGrid({ data }: { data: MetricsData }) {
   ];
 
   return (
-    <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-full divide-x divide-zinc-800/60" onMouseLeave={() => setHoveredIndex(null)}>
+    <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-auto lg:h-full divide-y lg:divide-y-0 lg:divide-x divide-zinc-800/60" onMouseLeave={() => setHoveredIndex(null)}>
       {/* Magic Hover Line at the bottom boundary */}
       <div 
          className="absolute -bottom-[1px] h-[2px] bg-[#C8FF00] shadow-[0_0_12px_#C8FF00] transition-all duration-300 ease-out z-20 pointer-events-none"
@@ -44,7 +44,7 @@ export default function MetricsGrid({ data }: { data: MetricsData }) {
       {metrics.map((metric, i) => (
         <div 
           key={i} 
-          className="flex flex-col justify-center px-8 h-full transition-colors duration-300 hover:bg-white/[0.01] cursor-default"
+          className="flex flex-col justify-center py-4 lg:py-0 px-4 xl:px-6 h-auto lg:h-full transition-colors duration-300 hover:bg-white/[0.01] cursor-default"
           onMouseEnter={() => setHoveredIndex(i)}
         >
           <h3 className="text-zinc-400 text-[11px] font-medium tracking-widest uppercase mb-2">{metric.title}</h3>

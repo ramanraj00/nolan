@@ -20,7 +20,7 @@ export default function DashboardOverview() {
 
   if (loading && !metrics) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)] bg-[#07080B]">
+      <div className="flex items-center justify-center h-full bg-[#07080B]">
         <div className="flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-2 border-[#C8FF00] border-t-transparent rounded-full animate-spin"></div>
           <span className="text-zinc-400 text-sm font-medium">Loading dashboard...</span>
@@ -31,8 +31,8 @@ export default function DashboardOverview() {
 
   if (error && !metrics) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)] bg-[#07080B]">
-        <div className="flex flex-col items-center gap-3 text-center">
+      <div className="flex items-center justify-center h-full bg-[#07080B]">
+        <div className="flex flex-col items-center gap-2 lg:gap-3 text-center">
           <div className="text-[#FF3B30] text-sm font-bold">Failed to load dashboard</div>
           <div className="text-zinc-400 text-xs max-w-sm">{error}</div>
         </div>
@@ -52,7 +52,7 @@ export default function DashboardOverview() {
   const actions = metrics?.actionPerformance ?? { totalActions: 0, successful: 0, failed: 0, cancelled: 0 };
 
   return (
-    <div className="p-3 lg:p-4 max-w-[1920px] mx-auto h-[calc(100vh-64px)] overflow-hidden flex flex-col bg-[#07080B] relative z-0">
+    <div className="p-3 lg:p-4 pb-0 lg:pb-0 max-w-[1920px] mx-auto h-auto min-h-full lg:h-full overflow-hidden flex flex-col bg-[#07080B] relative z-0">
       {/* Backgrounds */}
       <div className="absolute top-[-250px] left-[-250px] w-[600px] h-[600px] rounded-full pointer-events-none -z-10" style={{ background: 'radial-gradient(circle, rgba(200,255,0,0.04) 0%, transparent 70%)' }}></div>
       <div className="absolute bottom-[-350px] right-[-350px] w-[800px] h-[800px] rounded-full pointer-events-none -z-10" style={{ background: 'radial-gradient(circle, rgba(50,173,230,0.03) 0%, transparent 70%)' }}></div>
@@ -64,13 +64,13 @@ export default function DashboardOverview() {
       </div>
       
       {/* Dashboard Layout - Exact Single Screen (No Scroll) */}
-      <div key={timeframe} className="flex-1 flex flex-col gap-3 min-h-0 overflow-hidden pb-2">
+      <div key={timeframe} className="flex-1 flex flex-col gap-4 lg:gap-3 min-h-0 overflow-visible lg:overflow-hidden pb-0 lg:pb-0">
         
         {/* ROW 1 & 2: Combined Top Overview Card */}
-        <div className="shrink-0 h-[170px] bg-[#111217] rounded-2xl border border-white/10 shadow-[0_0_20px_rgba(200,255,0,0.05)] flex flex-col relative overflow-hidden">
+        <div className="shrink-0 h-auto lg:h-[140px] xl:h-[150px] bg-[#111217] rounded-2xl border border-white/10 shadow-[0_0_20px_rgba(200,255,0,0.05)] flex flex-col relative overflow-hidden">
           
           {/* Top Half: KPIs */}
-          <div className="flex-1 min-h-0">
+          <div className="flex-none lg:flex-1 h-auto lg:h-full">
             <MetricsGrid data={s} />
           </div>
           
@@ -81,45 +81,45 @@ export default function DashboardOverview() {
           </div>
           
           {/* Bottom Half: Conversion Flow */}
-          <div className="flex-1 min-h-0 relative z-10">
+          <div className="flex-1 min-h-[140px] lg:min-h-0 relative z-10">
             <LiveRecoveryActivity data={{ casesByStatus, failedPayments: s.failedPayments, recoveryCases: s.recoveryCases, actionPerformance: actions }} />
           </div>
         </div>
         
         {/* ROW 3: Charts (Flexible height) */}
-        <div className="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-3 min-h-0">
+        <div className="flex-none lg:flex-[2] grid grid-cols-12 gap-4 lg:gap-3 min-h-0">
           
           {/* Left: RecoveryChart (5 cols) */}
-          <div className="xl:col-span-5 h-full">
+          <div className="col-span-12 lg:col-span-5 h-[280px] lg:h-full min-h-0">
             <RecoveryChart data={{ recoveredRevenue: s.recoveredRevenue, totalRevenueAtRisk: s.totalRevenueAtRisk, trend }} />
           </div>
           
           {/* Middle: AI & Policy + Failure Dist (4 cols) */}
-          <div className="xl:col-span-4 flex flex-col gap-3 h-full">
-             <div className="grid grid-cols-2 gap-3 h-[140px] shrink-0">
+          <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 lg:gap-3 h-auto lg:h-full min-h-0">
+             <div className="grid grid-cols-2 gap-3 lg:gap-3 h-[120px] shrink-0">
                <AIIntelligence data={ai} avgRecoveryProbability={s.averageRecoveryProbability} />
                <PolicyEngine data={policy} />
              </div>
-             <div className="flex-1 min-h-0">
+             <div className="flex-1 min-h-[280px] lg:min-h-0">
                <WhyPaymentsFail data={{ failureReasons, failedPayments: s.failedPayments }} />
              </div>
           </div>
 
           {/* Right: Recovery Pipeline (3 cols) */}
-          <div className="xl:col-span-3 h-full bg-[#111217] rounded-xl border border-white/10 shadow-[0_0_20px_rgba(200,255,0,0.05)] overflow-hidden">
+          <div className="col-span-12 lg:col-span-3 h-auto lg:h-full min-h-0 bg-[#111217] rounded-xl border border-white/10 shadow-[0_0_20px_rgba(200,255,0,0.05)] overflow-hidden">
              <RecoveryPipeline data={{ failedPayments: s.failedPayments, totalRevenueAtRisk: s.totalRevenueAtRisk, policyPassed: policy.allowed, aiAnalyzed: ai.totalDecisions, actionsDeployed: actions.totalActions, recovered: casesByStatus.RECOVERED ?? 0, recoveredRevenue: s.recoveredRevenue }} />
           </div>
         </div>
 
-        {/* ROW 4: Extra tables (h-[190px]) */}
-        <div className="shrink-0 h-[190px] grid grid-cols-1 xl:grid-cols-12 gap-3">
-           <div className="xl:col-span-3 h-full">
+        {/* ROW 4: Extra tables (h-[140px] lg:h-[150px] xl:h-[160px]) */}
+        <div className="flex-none lg:flex-[1] min-h-0 grid grid-cols-12 gap-4 lg:gap-3">
+           <div className="col-span-12 lg:col-span-3 h-auto lg:h-full min-h-0">
              <RecoveryCaseStatus data={casesByStatus} />
            </div>
-           <div className="xl:col-span-6 h-full">
+           <div className="col-span-12 lg:col-span-6 h-auto lg:h-full min-h-0">
              <RecentActionsTable data={recentActions} />
            </div>
-           <div className="xl:col-span-3 h-full">
+           <div className="col-span-12 lg:col-span-3 h-auto lg:h-full min-h-0">
              <AuditPreview data={actions} />
            </div>
         </div>
