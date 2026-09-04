@@ -55,18 +55,8 @@ export class RecoveryExecutorService {
         result: executionResult.message 
       });
 
-      await AuditEventService.createAuditEvent({
-        merchantId,
-        recoveryCaseId,
-        entityType: 'RECOVERY_ACTION',
-        entityId: actionId,
-        eventType: 'PAYMENT_RECOVERED',
-        actor: 'SYSTEM',
-        metadata: { result: executionResult.message }
-      });
-
-      // 7. Close the Recovery Case
-      await RecoveryCaseService.updateCaseStatus(recoveryCaseId, merchantId, 'RECOVERED');
+      // 7. Mark the case as IN_PROGRESS (waiting for customer to pay the link)
+      await RecoveryCaseService.updateCaseStatus(recoveryCaseId, merchantId, 'IN_PROGRESS');
 
       return { success: true, message: executionResult.message };
 
@@ -121,37 +111,65 @@ export class RecoveryExecutorService {
 
   private static async performProviderAction(actionType: string, actionData: any): Promise<{ message: string }> {
     if (actionType === 'RETRY_PAYMENT') {
-      // Connect to ACTUAL Razorpay API
-      // To retry a payment programmatically, usually you'd charge a tokenized card (recurring).
-      // Here we simulate hitting Razorpay's API. If keys are missing or paymentId is mock, it will correctly fail and trigger the FAILED -> ESCALATE flow.
-      const keyId = process.env.RAZORPAY_KEY_ID || 'dummy_key';
-      const keySecret = process.env.RAZORPAY_KEY_SECRET || 'dummy_secret';
+      const keyId = process.env.RAZORPAY_KEY_ID;
+      const keySecret = process.env.RAZORPAY_KEY_SECRET;
       
-      // We need the payment ID. Since actionData only has recoveryCaseId, 
-      // we'd typically fetch the payment ID via the recoveryCase, but for this executor we can 
-      // assume it's passed in metadata or we fetch it.
+      if (!keyId || !keySecret) {
+         throw new Error("Razorpay credentials missing in environment (.env). Cannot execute real API.");
+      }
+      
+      // Fetch the original payment details to recreate the charge
       const fetchQuery = `
-        SELECT p.razorpay_payment_id 
+        SELECT 
+          p.razorpay_payment_id,
+          p.amount,
+          p.currency,
+          c.name as customer_name,
+          c.email as customer_email,
+          c.phone as customer_phone
         FROM recovery_cases rc
         JOIN payments p ON p.id = rc.payment_id
+        JOIN customers c ON c.id = p.customer_id
         WHERE rc.id = $1
       `;
       const dbRes = await pool.query(fetchQuery, [actionData.recoveryCaseId]);
-      const razorpayPaymentId = dbRes.rows[0]?.razorpay_payment_id || 'unknown_pay_id';
+      
+      if (dbRes.rows.length === 0) {
+         throw new Error("Payment/Customer context not found for execution.");
+      }
 
-      // Example standard Razorpay API call (Base64 Auth)
+      const payment = dbRes.rows[0];
       const auth = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
       
-      const response = await fetch(`https://api.razorpay.com/v1/payments/${razorpayPaymentId}/capture`, {
+      // Creating a Payment Link is the safest "Retry" simulation for a Hackathon 
+      // without needing complex recurring tokens.
+      const payload = {
+        amount: parseInt(payment.amount),
+        currency: payment.currency || "INR",
+        accept_partial: false,
+        description: `Automated Retry for failed payment ${payment.razorpay_payment_id}`,
+        customer: {
+          name: payment.customer_name || "Customer",
+          email: payment.customer_email || "test@example.com",
+          contact: payment.customer_phone || "+919999999999"
+        },
+        notify: {
+          sms: false,
+          email: false // Prevent sending actual emails to fake accounts during test
+        },
+        reminder_enable: true,
+        notes: {
+          recovery_case_id: actionData.recoveryCaseId
+        }
+      };
+
+      const response = await fetch(`https://api.razorpay.com/v1/payment_links`, {
         method: 'POST',
         headers: {
           'Authorization': `Basic ${auth}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          amount: 1000, 
-          currency: "INR"
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
@@ -160,7 +178,7 @@ export class RecoveryExecutorService {
         throw new Error(`Razorpay API Error: ${data.error?.description || response.statusText}`);
       }
 
-      return { message: `Razorpay successfully retried/captured payment: ${data.id}` };
+      return { message: `Successfully generated Razorpay Recovery Link: ${data.short_url}` };
     }
 
     // Other mocked actions

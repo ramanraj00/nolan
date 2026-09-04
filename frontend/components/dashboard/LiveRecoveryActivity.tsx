@@ -19,8 +19,8 @@ export default function LiveRecoveryActivity({ data }: { data: FunnelData }) {
 
   const funnelData = [
     { label: "Failed Pmts", value: total.toLocaleString(), pct: "100%", color: "bg-[#333333]" },
-    { label: "Policy Passed", value: policyPassed.toLocaleString(), pct: total > 0 ? `${((policyPassed / total) * 100).toFixed(1)}%` : "0%", color: "bg-[#FF9500]" },
-    { label: "AI Deployed", value: aiDeployed.toLocaleString(), pct: total > 0 ? `${((aiDeployed / total) * 100).toFixed(1)}%` : "0%", color: "bg-[#32ADE6]" },
+    { label: "Policy Approved", value: policyPassed.toLocaleString(), pct: total > 0 ? `${((policyPassed / total) * 100).toFixed(1)}%` : "0%", color: "bg-[#FF9500]" },
+    { label: "Recovery Recommended", value: aiDeployed.toLocaleString(), pct: total > 0 ? `${((aiDeployed / total) * 100).toFixed(1)}%` : "0%", color: "bg-[#32ADE6]" },
     { label: "Recovered", value: recovered.toLocaleString(), pct: total > 0 ? `${((recovered / total) * 100).toFixed(1)}%` : "0%", color: "bg-[#C8FF00]" },
   ];
 

@@ -3,6 +3,7 @@ import { WebhookEventService } from './webhook-event.service';
 import { PaymentService } from './payment.service';
 import { RecoveryOrchestratorService } from './recovery-orchestrator.service';
 import { CustomerService } from './customer.service';
+import { PaymentRecoveryService } from './payment-recovery.service';
 
 export class WebhookProcessorService {
   /**
@@ -124,17 +125,39 @@ export class WebhookProcessorService {
         status: 'FAILED',
         orchestratorTriggered: true
       };
-    } else if (eventType === 'payment.captured' || eventType === 'payment.authorized') {
+    } else if (eventType === 'payment.captured') {
       const paymentEntity = payload?.payload?.payment?.entity;
       if (!paymentEntity) {
-        throw new Error(`Payment entity missing in ${eventType} payload`);
+        throw new Error(`Payment entity missing in payment.captured payload`);
       }
 
       normalizedData.payment = {
         razorpayPaymentId: paymentEntity.id,
         amount: paymentEntity.amount,
         currency: paymentEntity.currency,
-        status: eventType === 'payment.captured' ? 'CAPTURED' : 'AUTHORIZED',
+        status: 'CAPTURED',
+        email: paymentEntity.email,
+        contact: paymentEntity.contact
+      };
+
+      await PaymentRecoveryService.handlePaymentCaptured({
+        merchantId,
+        razorpayPaymentId: paymentEntity.id,
+        amount: paymentEntity.amount,
+        currency: paymentEntity.currency,
+      });
+
+    } else if (eventType === 'payment.authorized') {
+      const paymentEntity = payload?.payload?.payment?.entity;
+      if (!paymentEntity) {
+        throw new Error(`Payment entity missing in payment.authorized payload`);
+      }
+
+      normalizedData.payment = {
+        razorpayPaymentId: paymentEntity.id,
+        amount: paymentEntity.amount,
+        currency: paymentEntity.currency,
+        status: 'AUTHORIZED',
         email: paymentEntity.email,
         contact: paymentEntity.contact
       };

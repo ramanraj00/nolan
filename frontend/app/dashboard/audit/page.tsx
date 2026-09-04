@@ -16,13 +16,14 @@ interface AuditEvent {
   createdAt: string;
 }
 
-const getActorColor = (actor: string) => {
+const getActorBadge = (actor: string) => {
+  const base = "px-3 py-1.5 font-black uppercase tracking-widest text-[9px]";
   switch (actor) {
-    case 'SYSTEM': return 'text-[#888] bg-[#333]/30 border-[#555]/30';
-    case 'AI_AGENT': return 'text-[#32ADE6] bg-[#32ADE6]/10 border-[#32ADE6]/30';
-    case 'POLICY_ENGINE': return 'text-[#AF52DE] bg-[#AF52DE]/10 border-[#AF52DE]/30';
-    case 'HUMAN': return 'text-[#FF9500] bg-[#FF9500]/10 border-[#FF9500]/30';
-    default: return 'text-white bg-white/10 border-white/20';
+    case 'SYSTEM': return `${base} bg-white text-black`;
+    case 'AI_AGENT': return `${base} bg-[#32ADE6] text-black`;
+    case 'POLICY_ENGINE': return `${base} bg-[#AF52DE] text-white`;
+    case 'HUMAN': return `${base} bg-[#FF9500] text-black`;
+    default: return `${base} bg-[#555555] text-white`;
   }
 };
 
@@ -151,7 +152,7 @@ export default function AuditTrailPage() {
                         {formatDate(ev.createdAt)}
                       </td>
                       <td className="py-4 px-4">
-                        <span className={`px-2 py-1 text-[9px] font-black uppercase tracking-widest border ${getActorColor(ev.actor)}`}>
+                        <span className={getActorBadge(ev.actor)}>
                           {ev.actor.replace(/_/g, ' ')}
                         </span>
                       </td>
@@ -207,7 +208,7 @@ export default function AuditTrailPage() {
                  <div className="grid grid-cols-2 gap-4">
                     <div>
                        <div className="text-[9px] font-bold text-[#666] uppercase tracking-widest mb-1">Actor</div>
-                       <span className={`px-2 py-1 text-[9px] font-black uppercase tracking-widest border ${getActorColor(selectedEvent.actor)}`}>
+                       <span className={getActorBadge(selectedEvent.actor)}>
                           {selectedEvent.actor.replace(/_/g, ' ')}
                        </span>
                     </div>

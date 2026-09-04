@@ -139,7 +139,7 @@ export default function CaseDetailPage() {
                 <p className="text-[#888] text-xs font-bold tracking-widest uppercase mb-3">{(rc as any).policyDecision ? new Date((rc as any).policyDecision.createdAt).toLocaleTimeString() : '+ 0.8s'}</p>
                 <div className="flex flex-wrap gap-2">
                   {(rc as any).policyDecision?.rulesEvaluated ? (
-                    (typeof (rc as any).policyDecision.rulesEvaluated === 'string' ? JSON.parse((rc as any).policyDecision.rulesEvaluated) : (rc as any).policyDecision.rulesEvaluated).map((rule: string, i: number) => (
+                    (Array.isArray((rc as any).policyDecision.rulesEvaluated) ? (rc as any).policyDecision.rulesEvaluated : ((rc as any).policyDecision.rulesEvaluated as string).startsWith('[') ? JSON.parse((rc as any).policyDecision.rulesEvaluated) : [(rc as any).policyDecision.rulesEvaluated]).map((rule: string, i: number) => (
                        <span key={i} className="px-2 py-1 bg-white/5 text-[#ccc] text-[10px] font-bold uppercase tracking-widest border border-white/10">Rule: {rule}</span>
                     ))
                   ) : (

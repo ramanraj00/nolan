@@ -20,7 +20,7 @@ export default function RecoveryChart({ data }: { data: ChartData }) {
   const [animKeyRec, setAnimKeyRec] = useState(0);
   const [animKeyRisk, setAnimKeyRisk] = useState(0);
 
-  useEffect(() => { setTimeout(() => setMounted(true), 50); }, []);
+  useEffect(() => { setTimeout(() => setMounted(true), 150); }, []);
 
   const handleTabChange = (tab: "recovered" | "risk") => {
     setActiveTab(tab);
@@ -32,44 +32,75 @@ export default function RecoveryChart({ data }: { data: ChartData }) {
   const risk = formatCurrency(data.totalRevenueAtRisk);
 
   // Build chart points from real trend data
-  const { chartPoints, dotPoints, dayLabels } = useMemo(() => {
-    if (!data.trend.length) {
-      return { chartPoints: "0,90 60,80 120,85 180,55 240,40 300,50 360,25", dotPoints: [{x:0,y:90},{x:60,y:80},{x:120,y:85},{x:180,y:55},{x:240,y:40},{x:300,y:50},{x:360,y:25}], dayLabels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"] };
+  const { pathData, areaPathData, dotPoints, dayLabels } = useMemo(() => {
+    let rawData = data.trend;
+    let fallbackLabels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+    if (!rawData || rawData.length === 0) {
+      rawData = fallbackLabels.map((_, i) => ({ date: `2026-01-0${i+1}`, recoveredRevenue: Math.random() * 100 }));
     }
-    const maxVal = Math.max(...data.trend.map(t => t.recoveredRevenue), 1);
-    const step = 360 / Math.max(data.trend.length - 1, 1);
-    const pts = data.trend.map((t, i) => {
+
+    const maxVal = Math.max(...rawData.map(t => t.recoveredRevenue), 1);
+    const step = 360 / Math.max(rawData.length - 1, 1);
+    
+    const pts = rawData.map((t, i) => {
       const x = Math.round(i * step);
       const y = Math.round(100 - (t.recoveredRevenue / maxVal) * 80 - 5);
       return { x, y };
     });
-    const labels = data.trend.map(t => {
+
+    const labels = data.trend.length ? data.trend.map(t => {
       const d = new Date(t.date);
       return d.toLocaleDateString("en-US", { weekday: "short" });
-    });
+    }) : fallbackLabels;
+
+    // Smooth Bezier Curve generator
+    let path = `M ${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const curr = pts[i];
+      const next = pts[i + 1];
+      const midX = (curr.x + next.x) / 2;
+      path += ` C ${midX},${curr.y} ${midX},${next.y} ${next.x},${next.y}`;
+    }
+
+    const areaPath = `${path} L ${pts[pts.length - 1].x},110 L ${pts[0].x},110 Z`;
+
     return {
-      chartPoints: pts.map(p => `${p.x},${p.y}`).join(" "),
+      pathData: path,
+      areaPathData: areaPath,
       dotPoints: pts,
       dayLabels: labels,
     };
   }, [data.trend]);
 
-  // Risk tab shows inverse
+  // Risk tab shows inverse mathematically for visual effect
   const riskPoints = dotPoints.map(p => ({ x: p.x, y: Math.max(110 - p.y - 10, 5) }));
-  const riskChartPoints = riskPoints.map(p => `${p.x},${p.y}`).join(" ");
+  
+  let riskPath = `M ${riskPoints[0].x},${riskPoints[0].y}`;
+  for (let i = 0; i < riskPoints.length - 1; i++) {
+    const curr = riskPoints[i];
+    const next = riskPoints[i + 1];
+    const midX = (curr.x + next.x) / 2;
+    riskPath += ` C ${midX},${curr.y} ${midX},${next.y} ${next.x},${next.y}`;
+  }
+  const riskAreaPath = `${riskPath} L ${riskPoints[riskPoints.length - 1].x},110 L ${riskPoints[0].x},110 Z`;
 
-  const currentPoints = activeTab === "recovered" ? chartPoints : riskChartPoints;
+  const currentPath = activeTab === "recovered" ? pathData : riskPath;
+  const currentAreaPath = activeTab === "recovered" ? areaPathData : riskAreaPath;
   const currentDots = activeTab === "recovered" ? dotPoints : riskPoints;
-  const color = activeTab === "recovered" ? "#C8FF00" : "#888888";
+  const color = activeTab === "recovered" ? "#C8FF00" : "#A3A3A3";
+  const dropShadow = activeTab === "recovered" ? "drop-shadow(0 0 12px rgba(200,255,0,0.6))" : "drop-shadow(0 0 12px rgba(163,163,163,0.4))";
+
+  const latestDot = currentDots[currentDots.length - 1];
 
   return (
     <div className="bg-[#111217] rounded-2xl p-5 shadow-lg border border-white/5 h-full flex flex-col justify-between relative overflow-hidden group">
       <style>{`
-        @keyframes drawOriginToRight {
-          0% { stroke-dashoffset: 1000; }
-          100% { stroke-dashoffset: 0; }
+        @keyframes smoothReveal {
+          0% { opacity: 0; transform: translateY(15px) scaleY(0.95); }
+          100% { opacity: 1; transform: translateY(0) scaleY(1); }
         }
-        .animate-draw { stroke-dasharray: 1000; animation: drawOriginToRight 1.5s cubic-bezier(0.22,1,0.36,1) forwards; }
+        .animate-reveal { animation: smoothReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: bottom; }
+        .chart-path { transition: d 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
       `}</style>
 
       <div className="flex justify-between items-start z-10 relative mb-4">
@@ -94,19 +125,20 @@ export default function RecoveryChart({ data }: { data: ChartData }) {
       </div>
 
       <div className="flex-1 relative w-full mt-2 z-0 min-h-[140px]">
-        <svg viewBox="0 0 360 110" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+        <svg viewBox="0 0 360 110" className={`w-full h-full overflow-visible ${mounted ? 'animate-reveal' : 'opacity-0'}`} preserveAspectRatio="none" style={{ filter: dropShadow }}>
           <defs>
-            <linearGradient id="chartGradientRec" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#C8FF00" stopOpacity="0.25" /><stop offset="100%" stopColor="#C8FF00" stopOpacity="0.0" /></linearGradient>
-            <linearGradient id="chartGradientRisk" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#888888" stopOpacity="0.25" /><stop offset="100%" stopColor="#888888" stopOpacity="0.0" /></linearGradient>
+            <linearGradient id="chartGradientRec" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#C8FF00" stopOpacity="0.4" /><stop offset="100%" stopColor="#C8FF00" stopOpacity="0.0" /></linearGradient>
+            <linearGradient id="chartGradientRisk" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#A3A3A3" stopOpacity="0.3" /><stop offset="100%" stopColor="#A3A3A3" stopOpacity="0.0" /></linearGradient>
           </defs>
-          <polygon points={`${currentPoints} 360,110 0,110`} fill={activeTab === "recovered" ? "url(#chartGradientRec)" : "url(#chartGradientRisk)"} className="transition-all duration-[1000ms] ease-in-out" style={{ opacity: mounted ? 1 : 0 }} />
-          <polyline points={currentPoints} fill="none" stroke={color} strokeWidth="2" className={`transition-all duration-[1000ms] ease-in-out ${mounted ? 'animate-draw' : ''} ${activeTab === 'recovered' ? 'drop-shadow-[0_0_8px_rgba(200,255,0,0.6)]' : 'drop-shadow-[0_0_8px_rgba(136,136,136,0.6)]'}`} />
-          {currentDots.map((pt, i) => (
-            <circle key={i} cx={pt.x} cy={pt.y} r="3" fill="#111217" stroke={color} strokeWidth="2" className="transition-all duration-[1000ms] ease-in-out" style={{ opacity: mounted ? 1 : 0, transitionDelay: mounted ? `${i * 150}ms` : '0ms' }} />
-          ))}
+          <path d={currentAreaPath} fill={activeTab === "recovered" ? "url(#chartGradientRec)" : "url(#chartGradientRisk)"} className="chart-path" />
+          <path d={currentPath} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chart-path" />
+          
+          {/* Only the latest data point has a dot, making it look much cleaner */}
+          <circle cx={latestDot.x} cy={latestDot.y} r="4" fill="#111217" stroke={color} strokeWidth="3" className="transition-all duration-700 ease-out" />
+          <circle cx={latestDot.x} cy={latestDot.y} r="12" fill={color} opacity="0.2" className="animate-pulse transition-all duration-700 ease-out" />
         </svg>
         <div className="absolute bottom-[-15px] left-0 right-0 flex justify-between text-[10px] font-medium text-[#666] pt-2">
-          {dayLabels.map((d, i) => <span key={i}>{d}</span>)}
+          {dayLabels.map((d, i) => <span key={i} className="opacity-70">{d}</span>)}
         </div>
       </div>
     </div>

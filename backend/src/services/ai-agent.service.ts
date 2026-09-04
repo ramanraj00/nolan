@@ -4,9 +4,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Ensure the API key is provided, otherwise fall back to a mock for development if needed, 
-// but the user explicitly requested NO HARDCODING, so we expect a real AI.
-const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+// Ensure the API key is provided
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 // The schema the AI must strictly follow
 const aiDecisionSchema = z.object({
@@ -33,18 +32,8 @@ export class AiAgentService {
    * Analyzes a failed payment context using Gemini and returns a structured recovery strategy.
    */
   static async analyzeFailure(payment: any, customer: any, recoveryCaseId: string): Promise<AiDecision> {
-    
-    // For automated tests without an API key, fallback to mock so pipelines don't break
-    if (!ai) {
-      console.warn("GEMINI_API_KEY is missing. Using mock AI response.");
-      return {
-        diagnosis: `Mock diagnosis for: ${payment.failureReason}`,
-        recovery_probability: 0.85,
-        recommended_action: 'RETRY_PAYMENT',
-        recommended_delay: 1440,
-        confidence: 0.9,
-        reasoning: 'Mock AI reasoning for testing.'
-      };
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not set in environment. Cannot generate real AI decision.");
     }
 
     const prompt = `
@@ -73,13 +62,35 @@ export class AiAgentService {
     `;
 
     try {
-      // We use the JSON structured output capability of Gemini to ensure we get exactly the schema we need.
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash', // fast and capable for this classification
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
-          responseSchema: aiDecisionSchema,
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              diagnosis: { type: "STRING", description: "Detailed diagnosis of why the payment failed based on available data." },
+              recovery_probability: { type: "NUMBER", description: "Probability (0.0 to 1.0) of successful recovery." },
+              recommended_action: { 
+                type: "STRING", 
+                enum: [
+                  'RETRY_PAYMENT', 
+                  'REQUEST_PAYMENT_METHOD_UPDATE', 
+                  'SEND_CHECKOUT_RECOVERY', 
+                  'RETRY_SUBSCRIPTION', 
+                  'SEND_PAYMENT_REMINDER', 
+                  'ESCALATE_HUMAN', 
+                  'STOP_RECOVERY'
+                ],
+                description: "The best automated or manual action to take next." 
+              },
+              recommended_delay: { type: "NUMBER", description: "Delay in minutes before executing the action." },
+              confidence: { type: "NUMBER", description: "AI confidence in this recommendation (0.0 to 1.0)." },
+              reasoning: { type: "STRING", description: "Concise explanation for this specific recommendation and delay." }
+            },
+            required: ["diagnosis", "recovery_probability", "recommended_action", "recommended_delay", "confidence", "reasoning"]
+          },
           temperature: 0.2 // Low temperature for more deterministic reasoning
         }
       });

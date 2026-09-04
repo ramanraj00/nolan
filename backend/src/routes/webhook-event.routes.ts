@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { WebhookEventService } from '../services/webhook-event.service';
+import { WebhookProcessorService } from '../services/webhook-processor.service';
 
 const router = express.Router();
 
@@ -55,6 +56,11 @@ router.post('/razorpay', async (req: any, res: Response): Promise<void> => {
       eventId: String(eventId),
       eventType: String(eventType),
       payload: req.body
+    });
+
+    // Fire & Forget processor so we respond to Razorpay quickly
+    WebhookProcessorService.processEvent(event.id).catch(err => {
+       console.error('Background processing of webhook failed:', err);
     });
 
     // 200 OK Response is critical for Razorpay to know it was received
