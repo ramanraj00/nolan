@@ -206,6 +206,13 @@ export default function PaymentsPage() {
       {/* Main Table Area */}
       <div className="flex-1 overflow-hidden flex flex-col px-4 pb-4 lg:px-8 lg:pb-8">
         <div className="flex-1 overflow-auto bg-[#111217] border border-white/5 relative">
+          
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-[#0f1015]/80 z-20 backdrop-blur-sm">
+              <div className="w-8 h-8 border-4 border-[#C8FF00] border-t-transparent rounded-none animate-spin"></div>
+            </div>
+          )}
+
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead className="sticky top-0 bg-[#0f1015] z-10 outline outline-1 outline-white/5">
               <tr>
@@ -220,11 +227,7 @@ export default function PaymentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {loading && (
-                 <tr>
-                    <td colSpan={8} className="py-12 text-center text-[#555] font-medium text-sm">Loading payments...</td>
-                 </tr>
-              )}
+              
               {!loading && displayPayments.length === 0 && (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-[#555] font-medium text-sm">

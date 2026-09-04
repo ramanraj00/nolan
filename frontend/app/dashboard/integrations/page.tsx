@@ -45,6 +45,7 @@ export default function IntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [selectedPayload, setSelectedPayload] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -72,6 +73,28 @@ export default function IntegrationsPage() {
   const lastWebhook = webhooks.length > 0 ? webhooks[0] : null;
   const recentWebhooks = webhooks.slice(0, 8);
 
+
+  const handleSimulate = async () => {
+    if (!merchant) return;
+    setTesting(true);
+    try {
+      await fetchApi('/webhook-events/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchant_id: merchant.id })
+      });
+      
+      // Reload webhooks
+      const res = await fetchApi<{ data: WebhookEvent[] }>(`/webhook-events?merchant_id=${merchant.id}`);
+      const sorted = res.data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setWebhooks(sorted);
+      
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTesting(false);
+    }
+  };
   const handleTestConnection = async () => {
     setTesting(true);
     setTestResult(null);
@@ -92,8 +115,8 @@ export default function IntegrationsPage() {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-[#07080B] text-[#555]">
-        Loading integration data...
+      <div className="h-[calc(100vh-64px)] w-full flex items-center justify-center bg-[#07080B]">
+        <div className="w-8 h-8 border-4 border-[#C8FF00] border-t-transparent rounded-none animate-spin"></div>
       </div>
     );
   }
@@ -160,13 +183,22 @@ export default function IntegrationsPage() {
         {/* Webhook Status + Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <div className="bg-[#111217] border border-white/5 p-6 col-span-1 lg:col-span-2">
-            <div className="flex flex-col lg:flex-row items-center lg:items-start lg:justify-between gap-4 lg:gap-0">
+            <div className="flex flex-col lg:flex-row items-center lg:items-start lg:justify-between gap-4 lg:gap-0 mb-8 w-full">
               <h3 className="text-[10px] font-bold text-[#888] uppercase tracking-widest">Webhook Pipeline</h3>
-              <span className={`px-3 py-1.5 font-black uppercase tracking-widest text-[9px] ${
-                totalEvents > 0 ? 'bg-[#C8FF00] text-black' : 'bg-[#555] text-white'
-              }`}>
-                {totalEvents > 0 ? 'ACTIVE' : 'INACTIVE'}
-              </span>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={handleSimulate}
+                  disabled={testing}
+                  className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest border border-white/10 transition-colors disabled:opacity-50"
+                >
+                  {testing ? 'SIMULATING...' : 'SIMULATE WEBHOOK'}
+                </button>
+                <span className={`px-3 py-1.5 font-black uppercase tracking-widest text-[9px] ${
+                  totalEvents > 0 ? 'bg-[#C8FF00] text-black' : 'bg-[#555] text-white'
+                }`}>
+                  {totalEvents > 0 ? 'ACTIVE' : 'INACTIVE'}
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -271,7 +303,7 @@ export default function IntegrationsPage() {
                 </tr>
               )}
               {recentWebhooks.map((w) => (
-                <tr key={w.id} className="hover:bg-white/[0.02] transition-colors">
+                <tr key={w.id} onClick={() => setSelectedPayload(w.payload)} className="hover:bg-white/[0.02] transition-colors cursor-pointer" title="Click to view full payload">
                   <td className="py-3 px-6 text-[11px] font-mono font-bold text-[#32ADE6]">{w.eventId}</td>
                   <td className="py-3 px-4">
                     <span className="text-[10px] font-black uppercase tracking-widest text-white">
@@ -300,6 +332,26 @@ export default function IntegrationsPage() {
         </div>
 
       </div>
+
+      {selectedPayload && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedPayload(null)}>
+          <div className="bg-[#111217] border border-white/10 w-full max-w-2xl flex flex-col relative shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/[0.02]">
+              <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Webhook Payload Details</h3>
+              <button onClick={() => setSelectedPayload(null)} className="text-[#888] hover:text-white transition-colors">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" strokeWidth="1.5"/>
+                </svg>
+              </button>
+            </div>
+            <div className="p-0 overflow-y-auto max-h-[70vh]">
+              <pre className="text-[#32ADE6] text-[11px] font-mono whitespace-pre-wrap p-6">
+                {JSON.stringify(selectedPayload, null, 2)}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

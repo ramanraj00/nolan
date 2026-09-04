@@ -125,8 +125,15 @@ export default function AIDecisionsPage() {
         <div className="flex-1 bg-[#111217] border border-white/5 relative flex overflow-hidden">
           
           {/* Table Container */}
-          <div className={`flex-1 overflow-auto transition-all duration-300 ${selectedDecision ? 'border-r border-white/5' : ''}`}>
-            <table className="w-full text-left border-collapse whitespace-nowrap">
+          <div className={`flex-1 overflow-auto relative transition-all duration-300 ${selectedDecision ? 'border-r border-white/5' : ''}`}>
+            
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-[#0f1015]/80 z-20 backdrop-blur-sm">
+              <div className="w-8 h-8 border-4 border-[#C8FF00] border-t-transparent rounded-none animate-spin"></div>
+            </div>
+          )}
+
+          <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead className="sticky top-0 bg-[#0f1015] z-10 outline outline-1 outline-white/5">
                 <tr>
                   <th className="py-5 px-6 text-[10px] font-bold text-[#666] uppercase tracking-[0.2em]">Decision ID</th>
@@ -140,11 +147,7 @@ export default function AIDecisionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {loading && (
-                   <tr>
-                      <td colSpan={8} className="py-12 text-center text-[#555] font-medium text-sm">Loading AI Decisions...</td>
-                   </tr>
-                )}
+                
                 {!loading && displayDecisions.length === 0 && (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-[#555] font-medium text-sm">

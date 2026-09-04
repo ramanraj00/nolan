@@ -20,11 +20,8 @@ export default function DashboardOverview() {
 
   if (loading && !metrics) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#07080B]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-[#C8FF00] border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-zinc-400 text-sm font-medium">Loading dashboard...</span>
-        </div>
+      <div className="h-[calc(100vh-64px)] w-full flex items-center justify-center bg-[#07080B]">
+        <div className="w-8 h-8 border-4 border-[#C8FF00] border-t-transparent rounded-none animate-spin"></div>
       </div>
     );
   }

@@ -35,7 +35,7 @@ export default function CaseDetailPage() {
 
   if (loading) return (
     <div className="p-4 lg:p-5 lg:p-8 max-w-[1920px] mx-auto h-[calc(100vh-64px)] flex items-center justify-center bg-[#07080B]">
-      <div className="w-8 h-8 border-4 border-[#C8FF00] border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-8 h-8 border-4 border-[#C8FF00] border-t-transparent rounded-none animate-spin"></div>
     </div>
   );
 

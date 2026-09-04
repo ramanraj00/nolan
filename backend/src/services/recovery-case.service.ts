@@ -92,8 +92,8 @@ export class RecoveryCaseService {
           'amount', p.amount,
           'currency', p.currency,
           'failureReason', p.failure_reason,
-          'gateway', p.gateway,
-          'method', p.payment_method
+          'gateway', 'Razorpay',
+          'method', 'Card'
         ) as payment
       FROM recovery_cases rc
       JOIN payments p ON p.id = rc.payment_id
@@ -145,8 +145,8 @@ export class RecoveryCaseService {
           'amount', p.amount,
           'currency', p.currency,
           'failureReason', p.failure_reason,
-          'gateway', p.gateway,
-          'method', p.payment_method
+          'gateway', 'Razorpay',
+          'method', 'Card'
         ) as payment,
         (
           SELECT json_build_object(
