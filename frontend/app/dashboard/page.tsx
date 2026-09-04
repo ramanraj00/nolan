@@ -5,7 +5,6 @@ import TimeFilter from "../../components/dashboard/TimeFilter";
 import MetricsGrid from "../../components/dashboard/MetricsGrid";
 import RecoveryChart from "../../components/dashboard/RecoveryChart";
 import LiveRecoveryActivity from "../../components/dashboard/LiveRecoveryActivity";
-import AiHealthChart from "../../components/dashboard/AiHealthChart";
 import RecoveryPipeline from "../../components/dashboard/RecoveryPipeline";
 import AIIntelligence from "../../components/dashboard/AIIntelligence";
 import PolicyEngine from "../../components/dashboard/PolicyEngine";
