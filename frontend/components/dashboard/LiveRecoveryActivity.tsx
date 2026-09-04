@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import AnimatedNumber from "./AnimatedNumber";
 
 interface FunnelData {
   casesByStatus: Record<string, number>;
@@ -10,6 +11,8 @@ interface FunnelData {
 
 export default function LiveRecoveryActivity({ data }: { data: FunnelData }) {
   const [mounted, setMounted] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
   useEffect(() => { setTimeout(() => setMounted(true), 150); }, []);
 
   const total = data.failedPayments || 1;
@@ -17,35 +20,57 @@ export default function LiveRecoveryActivity({ data }: { data: FunnelData }) {
   const aiDeployed = data.actionPerformance.totalActions;
   const recovered = data.casesByStatus.RECOVERED ?? 0;
 
-  const funnelData = [
-    { label: "Failed Pmts", value: total.toLocaleString(), pct: "100%", color: "bg-[#333333]" },
-    { label: "Policy Approved", value: policyPassed.toLocaleString(), pct: total > 0 ? `${((policyPassed / total) * 100).toFixed(1)}%` : "0%", color: "bg-[#FF9500]" },
-    { label: "Recovery Recommended", value: aiDeployed.toLocaleString(), pct: total > 0 ? `${((aiDeployed / total) * 100).toFixed(1)}%` : "0%", color: "bg-[#32ADE6]" },
-    { label: "Recovered", value: recovered.toLocaleString(), pct: total > 0 ? `${((recovered / total) * 100).toFixed(1)}%` : "0%", color: "bg-[#C8FF00]" },
+  const flowData = [
+    { label: "Failed Payments", value: total, pct: "100%", color: "#666666" },
+    { label: "Policy Approved", value: policyPassed, pct: total > 0 ? `${((policyPassed / total) * 100).toFixed(1)}%` : "0%", color: "#C8FF00" },
+    { label: "Action Deployed", value: aiDeployed, pct: total > 0 ? `${((aiDeployed / total) * 100).toFixed(1)}%` : "0%", color: "#C8FF00" },
+    { label: "Recovered", value: recovered, pct: total > 0 ? `${((recovered / total) * 100).toFixed(1)}%` : "0%", color: "#C8FF00" },
   ];
 
   return (
-    <div className="bg-[#111217] rounded-2xl border border-white/5 h-full p-4 flex flex-col relative overflow-hidden group">
-      <h3 className="text-[#888] font-bold text-[11px] tracking-widest uppercase mb-3">Conversion Funnel</h3>
-      <div className="flex-1 flex items-center justify-between gap-6 px-2">
-        <div className="w-[90px] h-full flex flex-col items-center gap-[3px] py-1">
-          <div className="w-[100%] flex-1 bg-[#333333] transition-all duration-1000 origin-top" style={{ clipPath: "polygon(0 0, 100% 0, 90% 100%, 10% 100%)", transform: mounted ? 'scaleY(1)' : 'scaleY(0)' }}></div>
-          <div className="w-[80%] flex-1 bg-[#FF9500] transition-all duration-1000 delay-150 origin-top shadow-[0_0_10px_rgba(255,149,0,0.5)]" style={{ clipPath: "polygon(0 0, 100% 0, 85% 100%, 15% 100%)", transform: mounted ? 'scaleY(1)' : 'scaleY(0)' }}></div>
-          <div className="w-[56%] flex-1 bg-[#32ADE6] transition-all duration-1000 delay-300 origin-top shadow-[0_0_10px_rgba(50,173,230,0.5)]" style={{ clipPath: "polygon(0 0, 100% 0, 80% 100%, 20% 100%)", transform: mounted ? 'scaleY(1)' : 'scaleY(0)' }}></div>
-          <div className="w-[34%] flex-1 bg-[#C8FF00] transition-all duration-1000 delay-500 origin-top shadow-[0_0_15px_rgba(200,255,0,0.6)]" style={{ clipPath: "polygon(0 0, 100% 0, 70% 100%, 30% 100%)", transform: mounted ? 'scaleY(1)' : 'scaleY(0)' }}></div>
-        </div>
-        <div className="flex-1 flex flex-col justify-between h-full py-1">
-          {funnelData.map((d, i) => (
-            <div key={i} className="flex justify-between items-center h-full max-h-[30px]">
-              <div>
-                <div className="text-[9px] text-[#888] font-bold uppercase tracking-wider mb-0.5">{d.label}</div>
-                <div className="text-sm font-black text-white tabular-nums leading-none">{d.value}</div>
-              </div>
-              {i > 0 && <div className={`text-[10px] font-bold ${i === 3 ? 'text-[#C8FF00]' : 'text-[#aaa]'}`}>{d.pct}</div>}
+    <div className="relative flex items-center justify-between w-full h-full px-6 gap-2 lg:gap-4" onMouseLeave={() => setHoveredIndex(null)}>
+      {/* Magic Hover Line at the top boundary */}
+      <div 
+         className="absolute -top-[1px] h-[2px] bg-[#C8FF00] shadow-[0_0_12px_#C8FF00] transition-all duration-300 ease-out z-20 pointer-events-none"
+         style={{
+           width: '12%',
+           left: hoveredIndex !== null ? `${(hoveredIndex * 25) + 12.5}%` : '50%',
+           transform: 'translateX(-50%)',
+           opacity: hoveredIndex !== null ? 1 : 0
+         }}
+      />
+
+      {flowData.map((step, i) => (
+        <React.Fragment key={i}>
+          <div 
+            className="flex flex-col justify-center flex-1 h-full relative overflow-hidden transition-all duration-300 hover:bg-white/[0.01] px-4 rounded-xl cursor-default group" 
+            style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(10px)', transitionDelay: mounted ? '0ms' : `${i * 150}ms` }}
+            onMouseEnter={() => setHoveredIndex(i)}
+          >
+            <div className="flex items-center justify-between w-full mb-1.5 mt-1">
+               <span className={`text-[9px] lg:text-[10px] font-bold uppercase tracking-wider truncate transition-colors duration-300 ${hoveredIndex === i ? 'text-zinc-200' : 'text-zinc-400'}`}>{step.label}</span>
+               <div className={`w-1.5 h-1.5 rounded-full transition-shadow duration-300 ${hoveredIndex === i ? 'shadow-[0_0_12px_rgba(200,255,0,0.8)] scale-125' : 'shadow-[0_0_8px_rgba(200,255,0,0.5)]'}`} style={{ backgroundColor: step.color }}></div>
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="flex items-end gap-2">
+              <div className="text-xl lg:text-2xl font-bold text-white tabular-nums tracking-tight leading-none">
+                {mounted ? <AnimatedNumber value={step.value} decimals={0} duration={1500} /> : "0"}
+              </div>
+              <div className={`text-[9px] lg:text-[10px] font-extrabold tracking-wide mb-[2px] transition-colors duration-300 ${hoveredIndex === i ? 'text-zinc-300' : 'text-zinc-500'}`}>
+                {i === 0 ? "TOTAL" : `${step.pct} RETAINED`}
+              </div>
+            </div>
+          </div>
+
+          {i < flowData.length - 1 && (
+            <div className="flex-shrink-0 text-zinc-600 transition-all duration-700"
+                 style={{ opacity: mounted ? 1 : 0, transitionDelay: `${i * 150 + 100}ms` }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          )}
+        </React.Fragment>
+      ))}
     </div>
   );
 }

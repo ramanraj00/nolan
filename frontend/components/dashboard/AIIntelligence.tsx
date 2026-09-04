@@ -8,39 +8,24 @@ export default function AIIntelligence({ data, avgRecoveryProbability }: { data:
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setTimeout(() => setMounted(true), 100); }, []);
 
-  const confidence = data.averageConfidence;
-  const c = 2 * Math.PI * 45;
-  const l1 = (confidence / 100) * c;
-
   return (
-    <div className="bg-[#111217] rounded-2xl border border-white/5 h-full p-5 flex items-center gap-6 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-[#32ADE6]/5 rounded-full blur-[40px] pointer-events-none"></div>
-      <div className="relative w-32 h-32 shrink-0">
-        <svg className="w-full h-full -rotate-90 drop-shadow-[0_0_10px_rgba(50,173,230,0.5)]" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="45" fill="none" stroke="#111" strokeWidth="6" />
-          <circle cx="50" cy="50" r="45" fill="none" stroke="#32ADE6" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${l1} ${c}`} strokeDashoffset={mounted ? 0 : l1} className="transition-all duration-[1500ms] ease-out" />
+    <div className="bg-[#111217] rounded-[20px] border border-white/10 shadow-[0_0_20px_rgba(200,255,0,0.05)] h-full p-5 flex flex-col relative overflow-hidden group justify-between">
+      <div className="w-10 h-10 rounded-full bg-[#32ADE6]/10 flex items-center justify-center mb-3">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#32ADE6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-2xl font-black text-white tabular-nums tracking-tighter">
-            {mounted ? <AnimatedNumber value={confidence} decimals={1} duration={1500} /> : "0"}%
-          </span>
-          <span className="text-[7px] text-[#32ADE6] font-bold uppercase tracking-widest mt-1">Confidence</span>
-        </div>
       </div>
-      <div className="flex-1 flex flex-col justify-center gap-4 z-10">
-        <div>
-          <div className="text-[9px] text-[#888] font-bold uppercase tracking-widest mb-0.5">Top Recommendation</div>
-          <div className="text-[13px] font-bold text-[#C8FF00] bg-[#C8FF00]/10 inline-block px-2 py-0.5 rounded border border-[#C8FF00]/20">RETRY_PAYMENT</div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="text-[8px] text-[#666] font-bold uppercase tracking-wider mb-0.5">Decisions</div>
-            <div className="text-[14px] font-black text-white tabular-nums">{mounted ? <AnimatedNumber value={data.totalDecisions} decimals={0} duration={1500} /> : "0"}</div>
-          </div>
-          <div>
-            <div className="text-[8px] text-[#666] font-bold uppercase tracking-wider mb-0.5">Avg Prob</div>
-            <div className="text-[14px] font-black text-[#C8FF00] tabular-nums">{mounted ? <AnimatedNumber value={avgRecoveryProbability} decimals={1} duration={1500} /> : "0"}%</div>
-          </div>
+      <div>
+        <div className="text-[13px] text-zinc-400 font-medium mb-1">AI Decisions</div>
+        <div className="flex items-end gap-2">
+           <div className="text-[22px] font-bold text-white leading-none tabular-nums">
+             {mounted ? <AnimatedNumber value={data.totalDecisions} decimals={0} duration={1500} /> : "0"}
+           </div>
+           <div className="text-[11px] font-medium text-[#C8FF00] mb-0.5">
+             {mounted ? avgRecoveryProbability.toFixed(1) : "0"}% avg prob
+           </div>
         </div>
       </div>
     </div>
