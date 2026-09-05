@@ -61,7 +61,7 @@ export default function DemoStore() {
         prefill: {
           name: "Test User",
           email: "test@example.com",
-          contact: "9999999999"
+          contact: "9876543210"
         },
         theme: {
           color: "#0a0a0a"
