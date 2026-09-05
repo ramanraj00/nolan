@@ -87,13 +87,11 @@ export default function DemoStore() {
     <div className="min-h-[80vh] bg-[#0a0a0a] text-white flex flex-col font-sans">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
-      {/* Navbar */}
-
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-6">
+      <main className="flex-1 flex flex-col xl:flex-row items-center justify-center p-6 gap-8">
+        {/* Left Side: Checkout Card */}
         <div className="max-w-md w-full bg-[#111] border border-white/10 rounded-xl overflow-hidden shadow-2xl">
           <div className="h-48 bg-gradient-to-br from-[#32ADE6]/20 to-[#C8FF00]/10 flex items-center justify-center p-8">
-            {/* Fake Product Image */}
             <div className="w-full h-full border border-white/10 bg-black/50 backdrop-blur-sm rounded-lg flex items-center justify-center flex-col gap-2 shadow-2xl">
                 <svg className="w-12 h-12 text-[#C8FF00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                 <div className="font-bold text-sm">Premium Workspace Pro</div>
@@ -127,11 +125,43 @@ export default function DemoStore() {
                 {loading ? "Processing..." : "Pay with Razorpay"}
               </button>
             )}
+          </div>
+        </div>
 
-            <div className="mt-6 text-center">
-              <p className="text-[10px] text-[#666] uppercase tracking-widest">
-                Test Mode: Use a test card and intentionally fail the payment to trigger Nolan AI.
-              </p>
+        {/* Right Side: Instructions */}
+        <div className="max-w-md w-full bg-[#0f1015] border border-white/5 p-6 rounded-xl">
+          <h2 className="text-[10px] font-bold text-[#C8FF00] uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            How to test Nolan AI
+          </h2>
+          
+          <div className="space-y-6">
+            <div className="flex gap-4 items-start">
+              <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs font-black text-white shrink-0 mt-0.5">1</div>
+              <div>
+                <p className="text-sm font-bold text-white mb-2">Use a Test Card</p>
+                <p className="text-xs text-[#888] leading-relaxed mb-2">Click "Pay with Razorpay" and enter one of these test cards. Enter any future expiry date and random CVV.</p>
+                <div className="space-y-1">
+                  <div className="bg-black border border-white/10 p-2 text-xs font-mono text-[#32ADE6] rounded">4100 2800 0000 1007 <span className="text-[#666] ml-2">// Generic Decline</span></div>
+                  <div className="bg-black border border-white/10 p-2 text-xs font-mono text-[#32ADE6] rounded">5555 5100 0008 1006 <span className="text-[#666] ml-2">// Issuer Decline</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4 items-start">
+              <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs font-black text-white shrink-0 mt-0.5">2</div>
+              <div>
+                <p className="text-sm font-bold text-white mb-2">Intentionally Fail the Payment</p>
+                <p className="text-xs text-[#888] leading-relaxed">Razorpay will show a mock bank OTP page. You must click the red <strong>"Failure"</strong> button (do not click Success or skip OTP).</p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 items-start">
+              <div className="w-6 h-6 rounded-full bg-[#C8FF00]/20 flex items-center justify-center text-xs font-black text-[#C8FF00] shrink-0 mt-0.5">3</div>
+              <div>
+                <p className="text-sm font-bold text-[#C8FF00] mb-2">Watch Nolan AI Recover It</p>
+                <p className="text-xs text-[#888] leading-relaxed">Once the payment fails, Nolan catches the webhook instantly. Go to your Dashboard's <strong>"AI Decisions"</strong> or <strong>"Recovery Cases"</strong> to see the AI strategy in action!</p>
+              </div>
             </div>
           </div>
         </div>
