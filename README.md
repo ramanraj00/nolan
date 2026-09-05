@@ -11,6 +11,15 @@
   Powered by Google Gemini 2.5 Flash · Built on Razorpay APIs · Real-time webhook-driven pipeline.
 </p>
 
+
+<p align="center">
+  <img src="assets/hero.png" alt="Nolan Dashboard" width="100%" />
+</p>
+
+## 🚀 Live Links
+- **Live Demo (Frontend):** [Insert your Vercel URL here]
+- **Backend API:** [https://nolan-5pb9.onrender.com](https://nolan-5pb9.onrender.com)
+
 <p align="center">
   <a href="#-architecture">Architecture</a> •
   <a href="#-how-it-works">How It Works</a> •
