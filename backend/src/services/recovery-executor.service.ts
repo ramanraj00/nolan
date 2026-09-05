@@ -152,7 +152,7 @@ export class RecoveryExecutorService {
         customer: {
           name: payment.customer_name || "Customer",
           email: payment.customer_email || "test@example.com",
-          contact: payment.customer_phone || "+919999999999"
+          contact: payment.customer_phone || "+919876543210"
         },
         notify: {
           sms: false,
