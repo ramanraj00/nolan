@@ -140,7 +140,7 @@ export default function DemoStore() {
               <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-xs font-black text-white shrink-0 mt-0.5">1</div>
               <div>
                 <p className="text-sm font-bold text-white mb-2">Use a Test Card</p>
-                <p className="text-xs text-[#888] leading-relaxed mb-2">Click "Pay with Razorpay" and enter one of these test cards. Enter any future expiry date and random CVV.</p>
+                <p className="text-xs text-[#888] leading-relaxed mb-2">Click "Pay with Razorpay" and enter one of these test cards. Use <strong>any future expiry date</strong> (e.g., 12/29) and <strong>123 for CVV</strong>.</p>
                 <div className="space-y-1">
                   <div className="bg-black border border-white/10 p-2 text-xs font-mono text-[#32ADE6] rounded">4100 2800 0000 1007 <span className="text-[#666] ml-2">// Generic Decline</span></div>
                   <div className="bg-black border border-white/10 p-2 text-xs font-mono text-[#32ADE6] rounded">5555 5100 0008 1006 <span className="text-[#666] ml-2">// Issuer Decline</span></div>
