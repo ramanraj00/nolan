@@ -15,10 +15,12 @@ import metricsRoutes from './routes/metrics.routes';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 8000;
+const port = Number(process.env.PORT) || 8000;
 
 import cors from "cors";
+
 app.use(cors());
+
 app.use(express.json({
   verify: (req: any, res, buf) => {
     req.rawBody = buf.toString();
@@ -40,16 +42,21 @@ app.use('/api/metrics', metricsRoutes);
 app.get('/', async (req: Request, res: Response) => {
   try {
     const result = await pool.query('SELECT NOW()');
-    res.json({ message: 'Backend with TypeScript & Postgres is running!', time: result.rows[0].now });
+
+    res.json({
+      message: 'Backend with TypeScript & Postgres is running!',
+      time: result.rows[0].now
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Database connection failed' });
+    res.status(500).json({
+      error: 'Database connection failed'
+    });
   }
 });
 
-if (process.env.NODE_ENV !== "production") {
-  app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-  });
-}
+// Start server
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Server is running on port ${port}`);
+});
 
 export default app;
