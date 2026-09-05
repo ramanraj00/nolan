@@ -34,7 +34,7 @@ router.post('/simulate', async (req: Request, res: Response): Promise<void> => {
 
     const payload = {
       event: randomEvent,
-      merchant_id,
+      merchant_id, account_id: merchant_id,
       payload: randomEvent === 'order.paid' ? {
         order: {
           entity: {

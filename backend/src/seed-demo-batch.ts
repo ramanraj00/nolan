@@ -97,12 +97,30 @@ async function seed() {
       let aStatus = 'PENDING';
       if (targetOutcome === 'RECOVERED') aStatus = 'SUCCESS';
       else if (targetOutcome === 'UNRECOVERABLE') aStatus = 'FAILED';
-      else if (targetOutcome === 'ESCALATED') aStatus = 'PENDING_APPROVAL';
+      else if (targetOutcome === 'ESCALATED') aStatus = 'CANCELLED';
+
+      let resultStr = null;
+      if (aStatus === 'SUCCESS') resultStr = `Payment recaptured successfully for ₹${(amount/100).toFixed(2)}`;
+      else if (aStatus === 'FAILED') resultStr = `Action failed: Customer unresponsive`;
+      else if (aStatus === 'CANCELLED') resultStr = `Action cancelled: Escalated to human`;
+      else resultStr = 'Awaiting execution';
+
+      const schedAt = new Date(createdAt.getTime() + 1000 * 60 * 5); // 5 mins later
+      const execAt = new Date(createdAt.getTime() + 1000 * 60 * 15); // 15 mins later
+      const compAt = new Date(createdAt.getTime() + 1000 * 60 * 20); // 20 mins later
+      
+      const insertStatus = (aStatus === 'SUCCESS' || aStatus === 'FAILED' || aStatus === 'CANCELLED') ? aStatus : aStatus;
 
       await pool.query(
-        `INSERT INTO recovery_actions (id, recovery_case_id, policy_decision_id, type, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [actionId, caseId, policyId, action, aStatus, createdAt]
+        `INSERT INTO recovery_actions (id, recovery_case_id, policy_decision_id, type, status, created_at, scheduled_at, executed_at, completed_at, result)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          actionId, caseId, policyId, action, insertStatus, createdAt, 
+          schedAt, 
+          (aStatus === 'SUCCESS' || aStatus === 'FAILED') ? execAt : null, 
+          (aStatus === 'SUCCESS' || aStatus === 'FAILED') ? compAt : null,
+          resultStr
+        ]
       );
 
       await pool.query(

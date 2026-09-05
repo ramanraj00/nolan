@@ -21,8 +21,8 @@ export default function PolicyEngine({ data }: { data: PolicyData }) {
            <div className="text-[22px] font-bold text-white leading-none tabular-nums">
              {mounted ? <AnimatedNumber value={data.totalEvaluations} decimals={0} duration={1500} /> : "0"}
            </div>
-           <div className="text-[11px] font-medium text-[#4ade80] mb-0.5">
-             {mounted ? <AnimatedNumber value={data.allowed} decimals={0} duration={1500} /> : "0"} allowed
+           <div className="text-[10px] font-medium text-zinc-400 mb-0.5">
+             <span className="text-[#4ade80]">{mounted ? <AnimatedNumber value={data.allowed} decimals={0} duration={1500} /> : "0"} auto</span> + <span className="text-[#FF9500]">{mounted ? <AnimatedNumber value={data.approvalRequired} decimals={0} duration={1500} /> : "0"} manual</span>
            </div>
         </div>
       </div>

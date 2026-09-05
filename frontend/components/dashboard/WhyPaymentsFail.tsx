@@ -32,7 +32,7 @@ export default function WhyPaymentsFail({ data }: { data: FailData }) {
       </div>
 
       <div className="flex-1 w-full flex flex-col gap-2 justify-center">
-        {sorted.slice(0, 3).map((r, i) => {
+        {sorted.map((r, i) => {
            const label = String(r[0]).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
            const count = Number(r[1]);
            const pct = total > 0 ? ((count / total) * 100).toFixed(0) : "0";

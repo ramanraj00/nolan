@@ -103,7 +103,7 @@ export default function DashboardOverview() {
 
           {/* Right: Recovery Pipeline (3 cols) */}
           <div className="col-span-12 lg:col-span-3 h-auto lg:h-full min-h-0 bg-[#111217] rounded-xl border border-white/10 shadow-[0_0_20px_rgba(200,255,0,0.05)] overflow-hidden">
-             <RecoveryPipeline data={{ failedPayments: s.failedPayments, totalRevenueAtRisk: s.totalRevenueAtRisk, policyPassed: policy.allowed, aiAnalyzed: ai.totalDecisions, actionsDeployed: actions.totalActions, recovered: casesByStatus.RECOVERED ?? 0, recoveredRevenue: s.recoveredRevenue }} />
+             <RecoveryPipeline data={{ failedPayments: s.failedPayments, totalRevenueAtRisk: s.totalRevenueAtRisk, policyPassed: policy.allowed + policy.approvalRequired, aiAnalyzed: ai.totalDecisions, actionsDeployed: actions.totalActions, recovered: casesByStatus.RECOVERED ?? 0, recoveredRevenue: s.recoveredRevenue }} />
           </div>
         </div>
 

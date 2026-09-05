@@ -74,7 +74,7 @@ export default function AIDecisionsPage() {
       d.diagnosis,
       `${Number(d.recoveryProbability || 0).toFixed(1)}%`,
       d.recommendedAction,
-      `${Number(d.confidence || 0).toFixed(1)}%`,
+      `${Number((d.confidence || 0) * 100).toFixed(1)}%`,
       d.model,
       new Date(d.createdAt).toISOString(),
       d.reasoning
@@ -180,7 +180,7 @@ export default function AIDecisionsPage() {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-[13px] font-bold text-[#32ADE6] tabular-nums">
-                        {Number(d.confidence || 0).toFixed(1)}%
+                        {Number((d.confidence || 0) * 100).toFixed(1)}%
                       </td>
                       <td className="py-4 px-4 text-[13px] font-medium text-[#888]">
                         {d.model}
@@ -241,7 +241,7 @@ export default function AIDecisionsPage() {
                   </div>
                   <div>
                     <div className="text-[9px] font-bold text-[#666] uppercase tracking-widest mb-1">Confidence</div>
-                    <div className="text-[#32ADE6] text-sm font-bold tabular-nums">{Number(selectedDecision.confidence || 0).toFixed(1)}%</div>
+                    <div className="text-[#32ADE6] text-sm font-bold tabular-nums">{Number((selectedDecision.confidence || 0) * 100).toFixed(1)}%</div>
                   </div>
                 </div>
 

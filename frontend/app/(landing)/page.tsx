@@ -88,7 +88,7 @@ export default function Home() {
           <div className="absolute inset-0 pt-8 px-8 md:pt-14 md:px-20 lg:px-28">
             <div className="relative w-full rounded-t-xl sm:rounded-t-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border-t border-x border-white/20 transform transition-transform hover:-translate-y-1 duration-500 overflow-hidden bg-[#0E0E0E]">
               <Image 
-                src="/nolandashboard.webp" 
+                src="/hero.png" 
                 alt="Dashboard UI" 
                 width={1672}
                 height={941}
@@ -118,7 +118,7 @@ export default function Home() {
             <div className="w-full overflow-x-auto pb-6 px-6 custom-scrollbar">
               <div className="relative w-[800px] mx-auto shrink-0 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] border-t border-x border-white/20 transform transition-transform hover:-translate-y-1 duration-500 overflow-hidden bg-[#0E0E0E]">
                 <Image 
-                  src="/nolandashboard.webp" 
+                  src="/hero.png" 
                   alt="Dashboard UI" 
                   width={1672}
                   height={941}
