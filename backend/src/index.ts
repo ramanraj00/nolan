@@ -11,6 +11,8 @@ import recoveryActionRoutes from './routes/recovery-action.routes';
 import auditEventRoutes from './routes/audit-event.routes';
 import webhookEventRoutes from './routes/webhook-event.routes';
 import metricsRoutes from './routes/metrics.routes';
+import testNolanRoutes from './routes/test-nolan.routes';
+
 
 dotenv.config();
 
@@ -38,6 +40,8 @@ app.use('/api/recovery-actions', recoveryActionRoutes);
 app.use('/api/audit-events', auditEventRoutes);
 app.use('/api/webhook-events', webhookEventRoutes);
 app.use('/api/metrics', metricsRoutes);
+app.use('/api/test-nolan', testNolanRoutes);
+
 
 app.get('/', async (req: Request, res: Response) => {
   try {
