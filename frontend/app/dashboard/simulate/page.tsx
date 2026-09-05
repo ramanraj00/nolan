@@ -98,7 +98,7 @@ export default function SimulatePage() {
     <div className="p-4 lg:p-8 pb-32 max-w-[1400px] mx-auto min-h-screen">
       <div className="mb-8">
         <h1 className="text-3xl lg:text-4xl font-black text-white tracking-tight mb-2 flex items-center gap-3">
-          ⚡ Nolan Recovery Lab
+          Nolan Recovery Lab
           <span className="px-3 py-1 bg-[#C8FF00]/20 text-[#C8FF00] text-[10px] uppercase tracking-widest rounded-full border border-[#C8FF00]/50 relative top-[-4px]">Live Engine</span>
         </h1>
         <p className="text-[#888]">Create a real-time payment failure event and watch Nolan analyze, govern, and execute the recovery workflow.</p>
@@ -183,7 +183,7 @@ export default function SimulatePage() {
               disabled={loading || !merchantId}
               className="mt-2 w-full bg-[#C8FF00] text-black font-black text-xs py-4 px-2 uppercase tracking-widest hover:bg-[#b3e600] transition-all disabled:opacity-50 hover:shadow-[0_0_20px_rgba(200,255,0,0.4)]"
             >
-              {loading ? "Injecting Event..." : "🚀 Inject Payment Failure"}
+              {loading ? "Injecting Event..." : "Inject Payment Failure"}
             </button>
             {error && <div className="text-[#FF3B30] text-[10px] font-medium bg-[#FF3B30]/10 p-2 text-center">{error}</div>}
           </div>
@@ -338,7 +338,7 @@ export default function SimulatePage() {
           <div className="w-[1px] h-8 bg-white/10"></div>
           <div>
             <div className="text-[10px] text-[#666] uppercase tracking-widest mb-1">Policy Status</div>
-            <div className={`font-black text-sm tracking-widest uppercase ${result.policy.allowed ? 'text-[#4ade80]' : 'text-[#FF3B30]'}`}>{result.policy.allowed ? 'APPROVED ✓' : 'BLOCKED ✗'}</div>
+            <div className={`font-black text-sm tracking-widest uppercase ${result.policy.allowed ? 'text-[#4ade80]' : 'text-[#FF3B30]'}`}>{result.policy.allowed ? 'APPROVED' : 'BLOCKED'}</div>
           </div>
           <div className="w-[1px] h-8 bg-white/10"></div>
           <div>
