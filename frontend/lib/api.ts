@@ -1,12 +1,32 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname !== "localhost" ? "/api" : "http://localhost:8000/api");
 
+
+const cache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 10000; // 10 seconds
+
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const isGet = !options || !options.method || options.method === 'GET';
+  const cacheKey = endpoint;
+  
+  if (isGet && cache.has(cacheKey)) {
+    const cached = cache.get(cacheKey)!;
+    if (Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data as T;
+    }
+  }
+
   const res = await fetch(`${API_BASE}${endpoint}`, { cache: "no-store", ...options });
   if (!res.ok) {
     throw new Error(`API Error: ${res.status} ${res.statusText}`);
   }
-  return res.json();
+  
+  const data = await res.json();
+  if (isGet) {
+    cache.set(cacheKey, { data, timestamp: Date.now() });
+  }
+  return data as T;
 }
+
 
 export interface DashboardMetrics {
   summary: { totalRevenueAtRisk: number; recoveredRevenue: number; recoveryRate: number; failedPayments: number; recoveryCases: number; recoveredRevenueToday: number; averageRecoveryProbability: number; };
