@@ -11,39 +11,30 @@ const router = express.Router();
 
 router.post('/simulate', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { merchant_id, failure_reason, amount, customer_context } = req.body;
+    const { 
+      merchant_id, 
+      failure_reason, 
+      amount, 
+      payment_method = 'Card',
+      lifetime_value = 1000,
+      successful_payments = 1,
+      failed_payments = 0
+    } = req.body;
     
-    if (!merchant_id || !failure_reason || !amount || !customer_context) {
+    if (!merchant_id || !failure_reason || !amount) {
       res.status(400).json({ error: 'Missing required parameters' });
       return;
     }
 
-    // 1. Create realistic customer based on context
     const customerId = `test_cust_${Date.now()}`;
     const email = `test_${Date.now()}@example.com`;
-    let lifetimeValue = 1000;
-    let successfulPayments = 1;
-    let failedPayments = 0;
-
-    if (customer_context === 'High Value Customer') {
-      lifetimeValue = 50000;
-      successfulPayments = 15;
-    } else if (customer_context === 'Low Value Customer') {
-      lifetimeValue = 100;
-      successfulPayments = 1;
-    } else if (customer_context === 'Risky Customer') {
-      lifetimeValue = 0;
-      successfulPayments = 0;
-      failedPayments = 5;
-    }
 
     await pool.query(
       `INSERT INTO customers (id, merchant_id, external_customer_id, name, email, lifetime_value, successful_payments, failed_payments) 
        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7)`,
-      [merchant_id, customerId, 'Test User', email, lifetimeValue, successfulPayments, failedPayments]
+      [merchant_id, customerId, 'Demo User', email, lifetime_value, successful_payments, failed_payments]
     );
 
-    // 2. Generate a Webhook Event
     const eventId = `evt_test_${Date.now()}`;
     const paymentId = `pay_test_${Date.now()}`;
     
@@ -58,6 +49,7 @@ router.post('/simulate', async (req: Request, res: Response): Promise<void> => {
             amount: amount,
             currency: 'INR',
             email: email,
+            method: payment_method.toLowerCase(),
             customer_id: customerId,
             error_description: failure_reason
           }
@@ -71,40 +63,31 @@ router.post('/simulate', async (req: Request, res: Response): Promise<void> => {
     );
     const dbWebhookId = webhookRes.rows[0].id;
 
-    // 3. Run Pipeline synchronously
+    // Run Pipeline synchronously
     await WebhookProcessorService.processEvent(dbWebhookId);
 
-    // 4. Fetch the generated pipeline entities to return to frontend
-    // Get Payment
+    // Fetch generated entities
     const paymentRes = await pool.query(`SELECT id, status FROM payments WHERE razorpay_payment_id = $1`, [paymentId]);
     if (paymentRes.rows.length === 0) {
       throw new Error('Payment not created by pipeline');
     }
     const internalPaymentId = paymentRes.rows[0].id;
 
-    // Get Case
     const recoveryCase = await RecoveryCaseService.getRecoveryCaseByPaymentId(internalPaymentId, merchant_id);
-    if (!recoveryCase) {
-      throw new Error('Recovery case not created by pipeline');
-    }
+    if (!recoveryCase) throw new Error('Recovery case not created by pipeline');
 
-    // Get AI Decision
     const aiDecisions = await AgentDecisionService.getAgentDecisions(merchant_id, recoveryCase.id);
-    
-    // Get Policy Decision
     const policyDecisions = await PolicyDecisionService.getPolicyDecisions(merchant_id, recoveryCase.id);
-    
-    // Get Action
     const actionsRes = await pool.query(`SELECT * FROM recovery_actions WHERE recovery_case_id = $1`, [recoveryCase.id]);
-    const action = actionsRes.rows[0] || null;
-
+    
     res.status(200).json({
       success: true,
       data: {
-        payment: { id: paymentId, amount, failure_reason },
+        payment: { id: paymentId, amount, failure_reason, method: payment_method },
+        case: recoveryCase,
         ai: aiDecisions[0] || null,
         policy: policyDecisions[0] || null,
-        action: action
+        action: actionsRes.rows[0] || null
       }
     });
 
