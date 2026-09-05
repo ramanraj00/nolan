@@ -137,6 +137,13 @@ export class WebhookProcessorService {
         customerId = newCustomer.id;
       } else {
         customerId = customerRes.rows[0].id;
+        // Update phone/email from latest webhook data so recovery executor has fresh contact
+        if (paymentEntity.contact || paymentEntity.email) {
+          await pool.query(
+            `UPDATE customers SET phone = COALESCE($1, phone), email = COALESCE($2, email) WHERE id = $3`,
+            [paymentEntity.contact || null, paymentEntity.email || null, customerId]
+          );
+        }
       }
 
       // Create Payment Record

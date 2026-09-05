@@ -144,16 +144,22 @@ export class RecoveryExecutorService {
 
       // Creating a Payment Link is the safest "Retry" simulation for a Hackathon
       // without needing complex recurring tokens.
+      const customerObj: Record<string, string> = {
+        name: payment.customer_name || "Customer",
+        email: payment.customer_email || "recovery@nolan.app"
+      };
+      if (payment.customer_phone) {
+        customerObj.contact = payment.customer_phone.startsWith('+') 
+          ? payment.customer_phone 
+          : `+91${payment.customer_phone}`;
+      }
+
       const payload = {
         amount: parseInt(payment.amount),
         currency: payment.currency || "INR",
         accept_partial: false,
         description: `Automated Retry for failed payment ${payment.razorpay_payment_id}`,
-        customer: {
-          name: payment.customer_name || "Customer",
-          email: payment.customer_email || "test@example.com",
-          contact: payment.customer_phone || "+919876543210"
-        },
+        customer: customerObj,
         notify: {
           sms: false,
           email: false // Prevent sending actual emails to fake accounts during test
