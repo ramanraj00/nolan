@@ -35,6 +35,7 @@ export class AgentDecisionService {
       'REQUEST_PAYMENT_METHOD_UPDATE',
       'SEND_PAYMENT_REMINDER',
       'SEND_CHECKOUT_RECOVERY',
+      'RETRY_SUBSCRIPTION',
       'ESCALATE_HUMAN',
       'STOP_RECOVERY'
     ];
