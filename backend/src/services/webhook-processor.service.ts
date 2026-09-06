@@ -7,6 +7,12 @@ interface RazorpayPaymentEntity {
   contact?: string;
   error_description?: string;
   error_reason?: string;
+  notes?: {
+    recovery_case_id?: string;
+    recovery_action_id?: string;
+    source?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 interface RazorpayWebhookPayload {
@@ -233,7 +239,7 @@ export class WebhookProcessorService {
       });
 
       // Also check if this payment came from a recovery link (via notes)
-      const notes = (paymentEntity as any).notes;
+      const notes = paymentEntity.notes;
       if (notes && notes.recovery_case_id && notes.source === 'nolan_recovery') {
         console.log(`[WebhookProcessor] Recovery payment detected via notes: case ${notes.recovery_case_id}`);
         await PaymentRecoveryService.handleRecoveryLinkPayment({
