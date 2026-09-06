@@ -184,7 +184,7 @@ export class RecoveryOrchestratorService {
           | 'SEND_PAYMENT_REMINDER'
           | 'ESCALATE_HUMAN'
           | 'STOP_RECOVERY' =
-          'ESCALATE_HUMAN';
+          'RETRY_PAYMENT';
 
         let probability = 0.65;
         let delay = 0;
