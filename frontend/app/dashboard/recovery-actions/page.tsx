@@ -395,7 +395,24 @@ export default function RecoveryActionsPage() {
                       selectedAction.status === 'SUCCESS' ? 'text-white' : 
                       selectedAction.status === 'FAILED' ? 'text-[#FF3B30]' : 'text-[#666]'
                     }`}>
-                      {selectedAction.result || selectedAction.failureReason || 'Awaiting completion'}
+                      {(() => {
+                        const text = selectedAction.result || selectedAction.failureReason || 'Awaiting completion';
+                        const urlMatch = text.match(/(https?:\/\/[^\s]+)/);
+                        if (urlMatch) {
+                          const url = urlMatch[1];
+                          const parts = text.split(url);
+                          return (
+                            <>
+                              {parts[0]}
+                              <a href={url} target="_blank" rel="noopener noreferrer" className="text-[#C8FF00] hover:underline break-all">
+                                {url}
+                              </a>
+                              {parts[1]}
+                            </>
+                          );
+                        }
+                        return text;
+                      })()}
                     </div>
                     {/* We can fetch the audit trail via another API call later if needed, right now we just show a placeholder or nothing if not completed */}
                     {['SUCCESS', 'FAILED'].includes(selectedAction.status) && (
