@@ -224,12 +224,27 @@ export class WebhookProcessorService {
         contact: paymentEntity.contact
       };
 
+      // Try direct payment match first
       await PaymentRecoveryService.handlePaymentCaptured({
         merchantId,
         razorpayPaymentId: paymentEntity.id,
         amount: paymentEntity.amount,
         currency: paymentEntity.currency || "INR",
       });
+
+      // Also check if this payment came from a recovery link (via notes)
+      const notes = (paymentEntity as any).notes;
+      if (notes && notes.recovery_case_id && notes.source === 'nolan_recovery') {
+        console.log(`[WebhookProcessor] Recovery payment detected via notes: case ${notes.recovery_case_id}`);
+        await PaymentRecoveryService.handleRecoveryLinkPayment({
+          merchantId,
+          recoveryCaseId: notes.recovery_case_id,
+          recoveryActionId: notes.recovery_action_id,
+          razorpayPaymentId: paymentEntity.id,
+          amount: paymentEntity.amount,
+          currency: paymentEntity.currency || "INR",
+        });
+      }
 
     } else if (eventType === 'payment.authorized') {
       const paymentEntity = payload.payload?.payment?.entity as RazorpayPaymentEntity | undefined;

@@ -79,6 +79,26 @@ export class AiAgentService {
     - If it's a temporary issue (like insufficient funds), 'RETRY_PAYMENT' with a 24-48h delay is often best.
     - If the card is permanently invalid/expired, 'REQUEST_PAYMENT_METHOD_UPDATE' immediately (0 delay) is best.
     - If it's a high-value customer and the issue is complex, 'ESCALATE_HUMAN' might be required.
+
+    Probability and Confidence Scoring Rules:
+    - recovery_probability represents the likelihood that the payment CAN be successfully recovered.
+    - confidence represents how certain you are about YOUR recommendation.
+    - Both values must be logically consistent with your diagnosis and reasoning.
+    - For a first-time payment failure caused by a potentially temporary issue (network timeout, soft decline, insufficient funds on a first attempt), recovery_probability should be between 0.55 and 0.85.
+    - For permanent card failures (expired card, invalid card number, stolen card), recovery_probability should be between 0.20 and 0.45.
+    - For risk/fraud rejections, recovery_probability should be between 0.10 and 0.30.
+    - Do NOT assign extremely low recovery probability (below 0.10) unless there is overwhelming evidence that recovery is impossible.
+    - Confidence should typically be between 0.70 and 0.95.
+
+    Scoring Benchmarks:
+    | Failure Type            | recovery_probability | confidence |
+    |-------------------------|---------------------|------------|
+    | Temporary/Network       | 0.65 - 0.85         | 0.75 - 0.90 |
+    | Insufficient Funds (1st)| 0.55 - 0.75         | 0.70 - 0.85 |
+    | Card Expired            | 0.25 - 0.40         | 0.85 - 0.95 |
+    | Card Invalid/Stolen     | 0.10 - 0.25         | 0.85 - 0.95 |
+    | Risk/Fraud Rejected     | 0.10 - 0.30         | 0.80 - 0.90 |
+    | Unknown/Generic Decline | 0.40 - 0.65         | 0.60 - 0.80 |
     `;
 
     try {

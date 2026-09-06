@@ -142,4 +142,95 @@ export class PaymentRecoveryService {
       client.release();
     }
   }
+
+  /**
+   * Handle a payment captured via a Nolan Recovery Link.
+   * Uses recovery_case_id from payment link notes to directly mark the case as RECOVERED.
+   */
+  static async handleRecoveryLinkPayment(data: {
+    merchantId: string;
+    recoveryCaseId: string;
+    recoveryActionId?: string;
+    razorpayPaymentId: string;
+    amount: number | string;
+    currency: string;
+  }) {
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // 1. Check if recovery case exists and is not already recovered
+      const caseRes = await client.query(
+        'SELECT * FROM recovery_cases WHERE id = $1 AND merchant_id = $2',
+        [data.recoveryCaseId, data.merchantId]
+      );
+
+      if (caseRes.rows.length === 0) {
+        console.warn(`[PaymentRecovery] Recovery case ${data.recoveryCaseId} not found.`);
+        await client.query('ROLLBACK');
+        return;
+      }
+
+      const recoveryCase = caseRes.rows[0];
+
+      if (recoveryCase.status === 'RECOVERED') {
+        // Already recovered — idempotent
+        await client.query('COMMIT');
+        return;
+      }
+
+      // 2. Mark case as RECOVERED
+      await client.query(
+        `UPDATE recovery_cases
+         SET status = 'RECOVERED', recovered_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1 AND status IN ('OPEN', 'ANALYZING', 'ACTION_PENDING', 'IN_PROGRESS', 'ESCALATED')`,
+        [data.recoveryCaseId]
+      );
+
+      // 3. Mark recovery actions as SUCCESS
+      await client.query(
+        `UPDATE recovery_actions SET status = 'SUCCESS', completed_at = CURRENT_TIMESTAMP
+         WHERE recovery_case_id = $1 AND status NOT IN ('SUCCESS', 'FAILED', 'CANCELLED')`,
+        [data.recoveryCaseId]
+      );
+
+      // 4. Update original payment status
+      await client.query(
+        `UPDATE payments SET status = 'CAPTURED'
+         WHERE id = $1 AND status != 'CAPTURED'`,
+        [recoveryCase.payment_id]
+      );
+
+      // 5. Audit event
+      await client.query(`
+        INSERT INTO audit_events (
+          merchant_id, recovery_case_id, entity_type, entity_id, event_type, actor, metadata
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [
+        data.merchantId,
+        data.recoveryCaseId,
+        'RECOVERY_CASE',
+        data.recoveryCaseId,
+        'PAYMENT_RECOVERED',
+        'SYSTEM',
+        {
+          razorpayPaymentId: data.razorpayPaymentId,
+          amount: data.amount,
+          currency: data.currency,
+          source: 'recovery_link',
+          recoveryActionId: data.recoveryActionId
+        }
+      ]);
+
+      await client.query('COMMIT');
+
+      console.log(`[PaymentRecovery] Case ${data.recoveryCaseId} marked as RECOVERED via recovery link.`);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
 }
