@@ -322,8 +322,31 @@ export default function RecoveryActionsPage() {
                          <div className="text-[11px] font-bold text-[#FF9500] uppercase tracking-widest mb-1">Human Approval Required</div>
                          <div className="text-[12px] text-[#FF9500]/80">This action bypasses standard auto-execution policies and requires explicit approval before dispatching to the gateway.</div>
                          <div className="mt-4 flex gap-3">
-                           <button className="px-4 py-2 bg-[#FF9500] text-black text-[10px] font-black uppercase tracking-widest">Approve</button>
-                           <button className="px-4 py-2 bg-transparent border border-[#FF9500]/30 text-[#FF9500] text-[10px] font-black uppercase tracking-widest hover:bg-[#FF9500]/10 transition-colors">Reject</button>
+                           <button 
+                             onClick={async () => {
+                               try {
+                                 const res = await fetchApi<{data: RecoveryAction}>(`/recovery-actions/${selectedAction.id}/approve?merchant_id=${merchantId}`, { method: 'POST' });
+                                 setSelectedAction(res.data);
+                                 // update local list
+                                 setActions(actions.map(a => a.id === res.data.id ? res.data : a));
+                               } catch (err) {
+                                 console.error("Approve failed", err);
+                               }
+                             }}
+                             className="px-4 py-2 bg-[#FF9500] text-black text-[10px] font-black uppercase tracking-widest hover:bg-[#FF9500]/90 transition-colors"
+                           >Approve</button>
+                           <button 
+                             onClick={async () => {
+                               try {
+                                 const res = await fetchApi<{data: RecoveryAction}>(`/recovery-actions/${selectedAction.id}/reject?merchant_id=${merchantId}`, { method: 'POST' });
+                                 setSelectedAction(res.data);
+                                 setActions(actions.map(a => a.id === res.data.id ? res.data : a));
+                               } catch (err) {
+                                 console.error("Reject failed", err);
+                               }
+                             }}
+                             className="px-4 py-2 bg-transparent border border-[#FF9500]/30 text-[#FF9500] text-[10px] font-black uppercase tracking-widest hover:bg-[#FF9500]/10 transition-colors"
+                           >Reject</button>
                          </div>
                        </div>
                     </div>

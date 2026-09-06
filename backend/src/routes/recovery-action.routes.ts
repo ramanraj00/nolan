@@ -138,4 +138,70 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+router.post('/:id/approve', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const actionId = String(req.params.id);
+    const merchantId = req.query.merchant_id as string;
+
+    if (!merchantId) {
+      res.status(400).json({ error: 'merchant_id is a required query parameter' });
+      return;
+    }
+
+    const { RecoveryExecutorService } = await import('../services/recovery-executor.service');
+    
+    // Simulate a logged-in user ID for the audit log
+    const mockUserId = 'usr_human123';
+    
+    const updatedAction = await RecoveryExecutorService.approveAction(actionId, merchantId, mockUserId);
+    
+    // In a real system, you might immediately trigger execution after approval,
+    // or let a cron job pick it up. For this demo, we'll try executing immediately.
+    try {
+      await RecoveryExecutorService.executeAction(actionId, merchantId);
+    } catch (execError) {
+      console.error('[ActionRoutes] Execution after approval failed (will be retried/handled by executor):', execError);
+    }
+
+    // Return the updated action
+    const finalAction = await RecoveryActionService.getRecoveryActionById(actionId, merchantId);
+    res.status(200).json({ message: 'Action approved successfully', data: finalAction });
+
+  } catch (error: any) {
+    console.error('Error approving action:', error);
+    
+    if (error.message === 'Action not found or not pending approval') {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+    
+    res.status(500).json({ error: 'Internal server error while approving action' });
+  }
+});
+
+router.post('/:id/reject', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const actionId = String(req.params.id);
+    const merchantId = req.query.merchant_id as string;
+
+    if (!merchantId) {
+      res.status(400).json({ error: 'merchant_id is a required query parameter' });
+      return;
+    }
+
+    // State transition to CANCELLED/FAILED
+    await RecoveryActionService.updateRecoveryActionStatus(actionId, merchantId, {
+      status: 'CANCELLED',
+      result: 'Human rejected the action.'
+    });
+
+    const finalAction = await RecoveryActionService.getRecoveryActionById(actionId, merchantId);
+    res.status(200).json({ message: 'Action rejected successfully', data: finalAction });
+
+  } catch (error: any) {
+    console.error('Error rejecting action:', error);
+    res.status(500).json({ error: 'Internal server error while rejecting action' });
+  }
+});
+
 export default router;
