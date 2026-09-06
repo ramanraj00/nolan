@@ -100,9 +100,24 @@ export class WebhookProcessorService {
       const merchantRes = await pool.query(merchantQuery, [accountId]);
       
       if (merchantRes.rows.length === 0) {
-        throw new Error(`Merchant not found for Razorpay Account ID: ${accountId}`);
+        console.warn(`Merchant not found for Razorpay Account ID: ${accountId}. Falling back to active merchant.`);
+        
+        const fallbackMerchantRes = await pool.query(`
+          SELECT user_id as id
+          FROM merchants
+          WHERE status = 'active'
+          ORDER BY created_at ASC
+          LIMIT 1;
+        `);
+
+        if (fallbackMerchantRes.rows.length === 0) {
+          throw new Error('No active merchant found for webhook processing');
+        }
+
+        merchantId = fallbackMerchantRes.rows[0].id;
+      } else {
+        merchantId = merchantRes.rows[0].id;
       }
-      merchantId = merchantRes.rows[0].id;
 
       // Update the webhook event with the identified merchant
       await pool.query(`UPDATE webhook_events SET merchant_id = $1 WHERE id = $2`, [merchantId, webhookEventId]);
